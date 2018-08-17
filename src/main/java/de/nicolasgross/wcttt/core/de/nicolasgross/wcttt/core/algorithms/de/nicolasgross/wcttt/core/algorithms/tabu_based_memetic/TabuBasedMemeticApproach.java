@@ -3,6 +3,8 @@ package de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.de.nico
 import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.AbstractAlgorithm;
 import de.nicolasgross.wcttt.lib.model.Semester;
 
+import java.io.BufferedReader;
+
 public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
 	public static final String NAME = "Tabu-based memetic approach";
@@ -17,19 +19,16 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	}
 
 	@Override
-	public void readParameters() {
+	public void readParameters(BufferedReader inputReader) {
 		// TODO
 	}
 
 	@Override
 	protected boolean runAlgorithm() {
+		boolean foundFeasibleSolution = false;
 		while (!isCancelled.get()) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// ignore
-			}
+			// TODO
 		}
-		return false;
+		return foundFeasibleSolution;
 	}
 }

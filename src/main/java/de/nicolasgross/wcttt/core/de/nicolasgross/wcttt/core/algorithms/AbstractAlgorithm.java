@@ -2,12 +2,13 @@ package de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms;
 
 import de.nicolasgross.wcttt.lib.model.Semester;
 
+import java.io.BufferedReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractAlgorithm implements Algorithm {
 
-	protected Semester semester;
-	protected AtomicBoolean isCancelled = new AtomicBoolean(false);
+	protected final Semester semester;
+	protected final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
 	public AbstractAlgorithm(Semester semester) {
 		if (semester == null) {
@@ -17,8 +18,9 @@ public abstract class AbstractAlgorithm implements Algorithm {
 		this.semester = semester;
 	}
 
+	// don't use inputreader elsewhere and dont call this method
 	@Override
-	public abstract void readParameters();
+	public abstract void readParameters(BufferedReader inputReader);
 
 	// don't use system.in
 	protected abstract boolean runAlgorithm();

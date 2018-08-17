@@ -40,6 +40,7 @@ public class Main {
                 new BufferedReader(new InputStreamReader(System.in))) {
 			Algorithm selectedAlgorithm =
 					showAlgorithmSelection(algorithms, inputReader);
+			selectedAlgorithm.readParameters(inputReader);
 			foundFeasibleTimetable =
 					runAlgorithm(selectedAlgorithm, inputReader);
 		} catch (IOException e) {
@@ -96,6 +97,7 @@ public class Main {
 				System.out.println("Please select a number within the list");
 			}
 		}
+
 		System.out.println(algorithms.get(selected - 1).getName() + " selected");
 		System.out.println();
 		return algorithms.get(selected - 1);
