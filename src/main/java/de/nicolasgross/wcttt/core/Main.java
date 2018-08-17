@@ -1,6 +1,9 @@
 package de.nicolasgross.wcttt.core;
 
 import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.Algorithm;
+import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterDefinition;
+import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterType;
+import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterValue;
 import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.de.nicolasgross.wcttt.core.algorithms.tabu_based_memetic.TabuBasedMemeticApproach;
 import de.nicolasgross.wcttt.lib.binder.WctttBinder;
 import de.nicolasgross.wcttt.lib.binder.WctttBinderException;
@@ -16,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
 
-	public static void main(String args[]) throws WctttCoreException {
+	public static void main(String[] args) throws WctttCoreException {
 		if (args.length == 0 || args[0].startsWith("-")) {
 			printHelp();
 			return;
@@ -40,7 +43,7 @@ public class Main {
                 new BufferedReader(new InputStreamReader(System.in))) {
 			Algorithm selectedAlgorithm =
 					showAlgorithmSelection(algorithms, inputReader);
-			selectedAlgorithm.readParameters(inputReader);
+			parseAlgorithmParameters(selectedAlgorithm, inputReader);
 			foundFeasibleTimetable =
 					runAlgorithm(selectedAlgorithm, inputReader);
 		} catch (IOException e) {
@@ -101,6 +104,57 @@ public class Main {
 		System.out.println(algorithms.get(selected - 1).getName() + " selected");
 		System.out.println();
 		return algorithms.get(selected - 1);
+	}
+
+	private static void parseAlgorithmParameters(Algorithm selectedAlgorithm,
+	                                             BufferedReader inputReader)
+			throws IOException {
+		System.out.println("Following parameters are required:");
+		List<ParameterDefinition> definitions =
+				selectedAlgorithm.getParameters();
+		for (int i = 0; i < definitions.size(); i++) {
+			if (i > 0) {
+				System.out.print(", ");
+			}
+			System.out.print(definitions.get(i));
+		}
+		System.out.println();
+		while (true) {
+			System.out.println();
+			System.out.println("Please enter the according values in one " +
+					"line, separated by commas and in the previously shown order");
+			try {
+				List<ParameterValue> values = new ArrayList<>(
+						selectedAlgorithm.getParameters().size());
+				String[] splitInput = inputReader.readLine().split(", ");
+				for (int i = 0; i < splitInput.length; i++) {
+					parseParameterValue(splitInput[i], i, definitions, values);
+				}
+				selectedAlgorithm.setParameterValues(values);
+				break;
+			} catch (WctttCoreException e) {
+				System.out.println(e.getMessage());
+			} catch (NumberFormatException e) {
+				System.out.println("Please adhere to the parameter types");
+			}
+		}
+
+		System.out.println();
+	}
+
+	private static void parseParameterValue(String input, int index,
+	                                        List<ParameterDefinition> definitions,
+	                                        List<ParameterValue> values) {
+		ParameterDefinition definition = definitions.get(index);
+		if (definition.getType() == ParameterType.INT) {
+			ParameterValue<Integer> value = new ParameterValue<>(definition,
+					Integer.parseInt(input));
+			values.add(value);
+		} else {
+			ParameterValue<Double> value = new ParameterValue<>(definition,
+					Double.parseDouble(input));
+			values.add(value);
+		}
 	}
 
 	private static boolean runAlgorithm(Algorithm selectedAlgorithm,

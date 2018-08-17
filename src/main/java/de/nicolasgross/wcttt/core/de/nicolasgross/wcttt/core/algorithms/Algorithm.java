@@ -1,13 +1,17 @@
 package de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+import de.nicolasgross.wcttt.core.WctttCoreException;
+
+import java.util.List;
 
 public interface Algorithm {
 
 	String getName();
 
-	void readParameters(BufferedReader inputReader) throws IOException;
+	List<ParameterDefinition> getParameters();
+
+	void setParameterValues(List<ParameterValue> parameterValues)
+			throws WctttCoreException;
 
 	boolean createTimetable();
 
