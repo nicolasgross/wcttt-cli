@@ -1,10 +1,10 @@
 package de.nicolasgross.wcttt.core;
 
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.Algorithm;
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterDefinition;
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterType;
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterValue;
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.de.nicolasgross.wcttt.core.algorithms.tabu_based_memetic.TabuBasedMemeticApproach;
+import de.nicolasgross.wcttt.core.algorithms.Algorithm;
+import de.nicolasgross.wcttt.core.algorithms.ParameterDefinition;
+import de.nicolasgross.wcttt.core.algorithms.ParameterType;
+import de.nicolasgross.wcttt.core.algorithms.ParameterValue;
+import de.nicolasgross.wcttt.core.algorithms.tabu_based_memetic_approach.TabuBasedMemeticApproach;
 import de.nicolasgross.wcttt.lib.binder.WctttBinder;
 import de.nicolasgross.wcttt.lib.binder.WctttBinderException;
 import de.nicolasgross.wcttt.lib.model.Semester;

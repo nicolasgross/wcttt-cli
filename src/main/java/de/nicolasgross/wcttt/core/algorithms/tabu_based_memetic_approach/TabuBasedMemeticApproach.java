@@ -1,11 +1,11 @@
-package de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.de.nicolasgross.wcttt.core.algorithms.tabu_based_memetic;
+package de.nicolasgross.wcttt.core.algorithms.tabu_based_memetic_approach;
 
 import de.nicolasgross.wcttt.core.WctttCoreException;
 import de.nicolasgross.wcttt.core.WctttCoreFatalException;
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.AbstractAlgorithm;
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterDefinition;
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterType;
-import de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms.ParameterValue;
+import de.nicolasgross.wcttt.core.algorithms.AbstractAlgorithm;
+import de.nicolasgross.wcttt.core.algorithms.ParameterDefinition;
+import de.nicolasgross.wcttt.core.algorithms.ParameterType;
+import de.nicolasgross.wcttt.core.algorithms.ParameterValue;
 import de.nicolasgross.wcttt.lib.model.Semester;
 
 import java.util.ArrayList;

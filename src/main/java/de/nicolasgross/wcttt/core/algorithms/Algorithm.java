@@ -1,4 +1,4 @@
-package de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms;
+package de.nicolasgross.wcttt.core.algorithms;
 
 import de.nicolasgross.wcttt.core.WctttCoreException;
 

@@ -1,4 +1,4 @@
-package de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms;
+package de.nicolasgross.wcttt.core.algorithms;
 
 import de.nicolasgross.wcttt.lib.model.Semester;
 
@@ -29,5 +29,10 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	@Override
 	public void cancelTimetableCreation() {
 		isCancelled.set(true);
+	}
+
+	@Override
+	public String toString() {
+		return getName();
 	}
 }
