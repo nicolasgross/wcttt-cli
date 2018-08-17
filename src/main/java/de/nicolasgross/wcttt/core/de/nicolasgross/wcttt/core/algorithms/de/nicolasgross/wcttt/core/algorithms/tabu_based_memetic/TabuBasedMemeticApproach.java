@@ -7,7 +7,7 @@ import java.io.BufferedReader;
 
 public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
-	public static final String NAME = "Tabu-based memetic approach";
+	private static final String NAME = "Tabu-based memetic approach";
 
 	public TabuBasedMemeticApproach(Semester semester) {
 		super(semester);

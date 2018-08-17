@@ -3,6 +3,7 @@ package de.nicolasgross.wcttt.core.de.nicolasgross.wcttt.core.algorithms;
 import de.nicolasgross.wcttt.lib.model.Semester;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractAlgorithm implements Algorithm {
@@ -20,7 +21,8 @@ public abstract class AbstractAlgorithm implements Algorithm {
 
 	// don't use inputreader elsewhere and dont call this method
 	@Override
-	public abstract void readParameters(BufferedReader inputReader);
+	public abstract void readParameters(BufferedReader inputReader)
+			throws IOException;
 
 	// don't use system.in
 	protected abstract boolean runAlgorithm();
