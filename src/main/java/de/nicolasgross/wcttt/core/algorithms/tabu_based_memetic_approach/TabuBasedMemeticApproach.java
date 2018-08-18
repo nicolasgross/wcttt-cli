@@ -33,7 +33,8 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private double mutationRate;
 	private int tabuListSize;
 
-	public TabuBasedMemeticApproach(Semester semester) {
+	public TabuBasedMemeticApproach(Semester semester)
+			throws WctttCoreException {
 		super(semester);
 	}
 
