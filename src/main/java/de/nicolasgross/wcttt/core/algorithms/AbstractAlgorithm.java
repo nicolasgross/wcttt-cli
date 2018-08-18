@@ -11,18 +11,17 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	protected final Semester semester;
 	protected final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
-	public AbstractAlgorithm(Semester semester) throws WctttCoreException {
+	public AbstractAlgorithm(Semester semester) {
 		if (semester == null) {
 			throw new IllegalArgumentException("Parameter 'semester' must not" +
 					" be null");
 		}
-		checkSemesterConsistency();
 		this.semester = semester;
 	}
 
 	private void checkSemesterConsistency() throws WctttCoreException {
-		// TODO check conflicting pre assignments before generating timetable
 	}
+
 
 	// don't use system.in
 	protected abstract Timetable runAlgorithm();
