@@ -2,8 +2,8 @@ package de.nicolasgross.wcttt.core.algorithms;
 
 public class ParameterDefinition {
 
-	private String name;
-	private ParameterType type;
+	private final String name;
+	private final ParameterType type;
 
 	public ParameterDefinition(String name, ParameterType type) {
 		if (name == null) {

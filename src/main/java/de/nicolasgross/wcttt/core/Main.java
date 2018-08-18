@@ -166,7 +166,7 @@ public class Main {
 		finished.set(true);
 		long start = System.currentTimeMillis();
 		long remainingMillis;
-		while ((remainingMillis = System.currentTimeMillis() - start) < 3000) {
+		while ((remainingMillis = System.currentTimeMillis() - start) < 5000) {
 			try {
 				thread.join(remainingMillis);
 				break;

@@ -2,8 +2,8 @@ package de.nicolasgross.wcttt.core.algorithms;
 
 public class ParameterValue<T> {
 
-	private ParameterDefinition definition;
-	private T value;
+	private final ParameterDefinition definition;
+	private final T value;
 
 	public ParameterValue(ParameterDefinition definition, T value) {
 		if (definition == null || value == null) {
