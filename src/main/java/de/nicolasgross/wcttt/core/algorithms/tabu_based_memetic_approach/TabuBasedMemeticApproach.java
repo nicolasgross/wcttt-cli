@@ -7,6 +7,7 @@ import de.nicolasgross.wcttt.core.algorithms.ParameterDefinition;
 import de.nicolasgross.wcttt.core.algorithms.ParameterType;
 import de.nicolasgross.wcttt.core.algorithms.ParameterValue;
 import de.nicolasgross.wcttt.lib.model.Semester;
+import de.nicolasgross.wcttt.lib.model.Timetable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,11 +113,11 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	}
 
 	@Override
-	protected boolean runAlgorithm() {
+	protected Timetable runAlgorithm() {
 		boolean foundFeasibleSolution = false;
 		while (!isCancelled.get()) {
 			// TODO
 		}
-		return foundFeasibleSolution;
+		return null;
 	}
 }

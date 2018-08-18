@@ -1,6 +1,7 @@
 package de.nicolasgross.wcttt.core.algorithms;
 
 import de.nicolasgross.wcttt.lib.model.Semester;
+import de.nicolasgross.wcttt.lib.model.Timetable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -18,10 +19,10 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	}
 
 	// don't use system.in
-	protected abstract boolean runAlgorithm();
+	protected abstract Timetable runAlgorithm();
 
 	@Override
-	public boolean createTimetable() {
+	public Timetable createTimetable() {
 		isCancelled.set(false);
 		return runAlgorithm();
 	}

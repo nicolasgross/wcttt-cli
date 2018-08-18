@@ -1,6 +1,7 @@
 package de.nicolasgross.wcttt.core.algorithms;
 
 import de.nicolasgross.wcttt.core.WctttCoreException;
+import de.nicolasgross.wcttt.lib.model.Timetable;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ public interface Algorithm {
 	void setParameterValues(List<ParameterValue> parameterValues)
 			throws WctttCoreException;
 
-	boolean createTimetable();
+	Timetable createTimetable();
 
 	void cancelTimetableCreation();
 }

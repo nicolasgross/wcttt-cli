@@ -8,12 +8,15 @@ import de.nicolasgross.wcttt.core.algorithms.tabu_based_memetic_approach.TabuBas
 import de.nicolasgross.wcttt.lib.binder.WctttBinder;
 import de.nicolasgross.wcttt.lib.binder.WctttBinderException;
 import de.nicolasgross.wcttt.lib.model.Semester;
+import de.nicolasgross.wcttt.lib.model.Timetable;
+import de.nicolasgross.wcttt.lib.model.WctttModelException;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -38,23 +41,26 @@ public class Main {
 		List<Algorithm> algorithms = new ArrayList<>();
 		algorithms.add(new TabuBasedMemeticApproach(semester));
 
-		boolean foundFeasibleTimetable;
+		Timetable generatedTimetable;
 		try (BufferedReader inputReader =
                 new BufferedReader(new InputStreamReader(System.in))) {
 			Algorithm selectedAlgorithm =
 					showAlgorithmSelection(algorithms, inputReader);
 			parseAlgorithmParameters(selectedAlgorithm, inputReader);
-			foundFeasibleTimetable =
+			generatedTimetable =
 					runAlgorithm(selectedAlgorithm, inputReader);
 		} catch (IOException e) {
 			throw new WctttCoreFatalException("Problem with input reader", e);
 		}
 
-		if (foundFeasibleTimetable) {
-			System.out.println("A feasible timetable was found and is added " +
-					"to the semester");
+		if (generatedTimetable != null) {
+			System.out.println("A feasible timetable was found");
 			try {
+				semester.addTimetable(generatedTimetable);
 				binder.write(semester);
+			} catch (WctttModelException e) {
+				throw new WctttCoreException("Generated timetable was " +
+						"invalid, there is a bug in the algorithm", e);
 			} catch (WctttBinderException e) {
 				throw new WctttCoreException("Error while writing the semester",
 						e);
@@ -109,6 +115,16 @@ public class Main {
 	private static void parseAlgorithmParameters(Algorithm selectedAlgorithm,
 	                                             BufferedReader inputReader)
 			throws IOException {
+		if (selectedAlgorithm.getParameters().isEmpty()) {
+			try {
+				selectedAlgorithm.setParameterValues(new LinkedList<>());
+				return;
+			} catch (WctttCoreException e) {
+				throw new WctttCoreFatalException("Implementation error in " +
+						"algorithm '" + selectedAlgorithm + "', no parameter " +
+						"specified but empty value list was rejected", e);
+			}
+		}
 		System.out.println("Following parameters are required:");
 		List<ParameterDefinition> definitions =
 				selectedAlgorithm.getParameters();
@@ -157,12 +173,12 @@ public class Main {
 		}
 	}
 
-	private static boolean runAlgorithm(Algorithm selectedAlgorithm,
-	                                    BufferedReader inputReader) {
+	private static Timetable runAlgorithm(Algorithm selectedAlgorithm,
+	                                      BufferedReader inputReader) {
 		AtomicBoolean finished = new AtomicBoolean(false);
 		Thread thread = listenForAbort(selectedAlgorithm, finished, inputReader);
 		System.out.println("Enter 'q' to exit the algorithm");
-		boolean foundFeasibleTimetable = selectedAlgorithm.createTimetable();
+		Timetable timetable = selectedAlgorithm.createTimetable();
 		finished.set(true);
 		long start = System.currentTimeMillis();
 		long remainingMillis;
@@ -174,7 +190,7 @@ public class Main {
 				// ignore
 			}
 		}
-		return foundFeasibleTimetable;
+		return timetable;
 	}
 
 	private static Thread listenForAbort(Algorithm selectedAlgorithm,
