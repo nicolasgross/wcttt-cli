@@ -9,9 +9,7 @@ import de.nicolasgross.wcttt.core.algorithms.ParameterValue;
 import de.nicolasgross.wcttt.lib.model.Semester;
 import de.nicolasgross.wcttt.lib.model.Timetable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
@@ -27,6 +25,8 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private static final double MUTATION_RATE_MIN = 0.0;
 	private static final double MUTATION_RATE_MAX = 1.0;
 	private static final int TABU_LIST_SIZE_MIN = 1;
+	private static final List<NeighborhoodStructure> NBS_LIST = Arrays.asList(
+			new NeighborhoodStructure1());
 
 	private int populationSize;
 	private double crossoverRate;
@@ -115,9 +115,111 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	@Override
 	protected Timetable runAlgorithm() {
 		boolean foundFeasibleSolution = false;
-		while (!isCancelled.get()) {
-			// TODO
+
+		// Generate random initial population of feasible solutions
+		SaturationDegreeHeuristic satDegHeuristic =
+				new SaturationDegreeHeuristic(semester);
+		List<Timetable> population =
+				satDegHeuristic.generateFeasibleSolutions(populationSize);
+
+		population.forEach(t -> t.calcConstraintViolations(semester));
+		Timetable bestSolution = chooseBestSolution(population);
+		Queue<NeighborhoodStructure> tabuList = new LinkedList<>();
+		boolean chooseNewNbs = true; // Nbs == neighborhood structure
+		NeighborhoodStructure selectedNbs = null;
+
+		while (bestSolution.getSoftConstraintPenalty() != 0 &&
+				!isCancelled.get()) {
+			// Genetic operators:
+			Timetable[] parents = rouletteWheelSelectParents(population);
+			Timetable[] offspring = crossoverOperator(parents);
+			mutationOperator(offspring[0]);
+			mutationOperator(offspring[1]);
+
+			// Local search:
+			if (chooseNewNbs) {
+				selectedNbs = selectNbs(tabuList);
+			}
+			Timetable[] improvedOffspring = {new Timetable(offspring[0]),
+					new Timetable(offspring[1])};
+			localSearch(improvedOffspring[0], selectedNbs);
+			localSearch(improvedOffspring[1], selectedNbs);
+
+			// Calculate constraint violations of new solutions:
+			List<Timetable> allNewSolutions = Arrays.asList(offspring[0],
+					offspring[1], improvedOffspring[0], improvedOffspring[1]);
+			allNewSolutions.forEach(t -> t.calcConstraintViolations(semester));
+			Timetable bestNewSolution = chooseBestSolution(allNewSolutions);
+
+			// Update best solution and selected neighborhood structure:
+			if (bestNewSolution.getSoftConstraintPenalty() <
+					bestSolution.getSoftConstraintPenalty()) {
+				bestSolution = bestNewSolution;
+				chooseNewNbs = false;
+			} else {
+				tabuList.add(selectedNbs);
+				if (tabuList.size() > tabuListSize) {
+					tabuList.remove();
+				}
+				chooseNewNbs = true;
+			}
+
+			updatePopulation(population, bestNewSolution);
 		}
+
+		return bestSolution;
+	}
+
+	private Timetable chooseBestSolution(List<Timetable> solutions) {
+		Timetable bestSolution = solutions.get(0);
+		for (Timetable solution : solutions) {
+			if (solution.getSoftConstraintPenalty() >
+					bestSolution.getSoftConstraintPenalty()) {
+				bestSolution = solution;
+			}
+		}
+		return bestSolution;
+	}
+
+	private Timetable[] rouletteWheelSelectParents(List<Timetable> population) {
+		Timetable[] parents = new Timetable[2];
+		// TODO
+		return parents;
+	}
+
+	private Timetable[] crossoverOperator(Timetable[] parents) {
+		Timetable[] offspring = new Timetable[2];
+		// TODO
+		return offspring;
+	}
+
+	private void mutationOperator(Timetable timetable) {
+		// TODO
+	}
+
+	private NeighborhoodStructure selectNbs(Queue<NeighborhoodStructure> tabuList) {
+		// TODO
 		return null;
+	}
+
+	private void localSearch(Timetable timetable,
+	                         NeighborhoodStructure selectedNbs) {
+		// TODO
+	}
+
+	private void updatePopulation(List<Timetable> population,
+	                              Timetable bestNewSolution) {
+		Timetable worstSolution = population.get(0);
+		for (Timetable timetable : population) {
+			if (timetable.getSoftConstraintPenalty() >
+					worstSolution.getSoftConstraintPenalty()) {
+				worstSolution = timetable;
+			}
+		}
+		if (bestNewSolution.getSoftConstraintPenalty() <
+				worstSolution.getSoftConstraintPenalty()) {
+			population.remove(worstSolution);
+			population.add(bestNewSolution);
+		}
 	}
 }
