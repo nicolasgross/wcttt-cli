@@ -114,8 +114,6 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
 	@Override
 	protected Timetable runAlgorithm() {
-		boolean foundFeasibleSolution = false;
-
 		// Generate random initial population of feasible solutions
 		SaturationDegreeHeuristic satDegHeuristic =
 				new SaturationDegreeHeuristic(semester);
