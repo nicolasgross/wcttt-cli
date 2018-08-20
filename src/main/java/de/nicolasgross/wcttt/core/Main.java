@@ -56,7 +56,9 @@ public class Main {
 		if (generatedTimetable != null) {
 			System.out.println("A feasible timetable was found");
 			try {
+				generatedTimetable.setName("wcttt-core-default-id");
 				semester.addTimetable(generatedTimetable);
+				setNextTimetableName(semester, generatedTimetable);
 				binder.write(semester);
 			} catch (WctttModelException e) {
 				throw new WctttCoreException("Generated timetable was " +
@@ -174,20 +176,28 @@ public class Main {
 	}
 
 	private static Timetable runAlgorithm(Algorithm selectedAlgorithm,
-	                                      BufferedReader inputReader) {
+	                                      BufferedReader inputReader)
+			throws WctttCoreException {
 		AtomicBoolean finished = new AtomicBoolean(false);
 		Thread thread = listenForAbort(selectedAlgorithm, finished, inputReader);
 		System.out.println("Enter 'q' to exit the algorithm");
-		Timetable timetable = selectedAlgorithm.createTimetable();
-		finished.set(true);
-		long start = System.currentTimeMillis();
-		long remainingMillis;
-		while ((remainingMillis = System.currentTimeMillis() - start) < 5000) {
-			try {
-				thread.join(remainingMillis);
-				break;
-			} catch (InterruptedException e) {
-				// ignore
+		Timetable timetable;
+		try {
+			timetable = selectedAlgorithm.createTimetable();
+		} catch (WctttCoreException e) {
+			throw new WctttCoreException("A problem occurred while running " +
+					"the algorithm", e);
+		} finally {
+			finished.set(true);
+			long start = System.currentTimeMillis();
+			long remainingMillis;
+			while ((remainingMillis = System.currentTimeMillis() - start) < 5000) {
+				try {
+					thread.join(remainingMillis);
+					break;
+				} catch (InterruptedException e) {
+					// ignore
+				}
 			}
 		}
 		return timetable;
@@ -221,5 +231,20 @@ public class Main {
 		Thread thread = new Thread(runnable);
 		thread.start();
 		return thread;
+	}
+
+	private static void setNextTimetableName(Semester semester,
+	                                         Timetable timetable) {
+		int nextTimetablName = 0;
+		while (true) {
+			try {
+				semester.updateTimetableName(timetable,
+						"timetable" + nextTimetablName);
+				nextTimetablName++;
+				return;
+			} catch (WctttModelException e) {
+				nextTimetablName++;
+			}
+		}
 	}
 }

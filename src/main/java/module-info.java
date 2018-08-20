@@ -1,4 +1,5 @@
 module de.nicolasgross.wcttt.core {
+	requires javafx.controls;
 	requires de.nicolasgross.wcttt.lib;
 
 	exports de.nicolasgross.wcttt.core;

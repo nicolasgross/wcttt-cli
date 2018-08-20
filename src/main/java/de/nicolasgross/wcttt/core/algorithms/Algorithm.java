@@ -14,7 +14,7 @@ public interface Algorithm {
 	void setParameterValues(List<ParameterValue> parameterValues)
 			throws WctttCoreException;
 
-	Timetable createTimetable();
+	Timetable createTimetable() throws WctttCoreException;
 
 	void cancelTimetableCreation();
 }

@@ -24,10 +24,10 @@ public abstract class AbstractAlgorithm implements Algorithm {
 
 
 	// don't use system.in
-	protected abstract Timetable runAlgorithm();
+	protected abstract Timetable runAlgorithm() throws WctttCoreException;
 
 	@Override
-	public Timetable createTimetable() {
+	public Timetable createTimetable() throws WctttCoreException {
 		isCancelled.set(false);
 		return runAlgorithm();
 	}

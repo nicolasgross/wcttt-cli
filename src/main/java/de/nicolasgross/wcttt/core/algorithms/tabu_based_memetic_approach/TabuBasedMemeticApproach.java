@@ -114,7 +114,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	}
 
 	@Override
-	protected Timetable runAlgorithm() {
+	protected Timetable runAlgorithm() throws WctttCoreException {
 		// Generate random initial population of feasible solutions
 		SaturationDegreeHeuristic satDegHeuristic =
 				new SaturationDegreeHeuristic(semester);
@@ -130,7 +130,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		boolean chooseNewNbs = true; // Nbs == neighborhood structure
 		NeighborhoodStructure selectedNbs = null;
 
-		while (bestSolution.getSoftConstraintPenalty() != 0 &&
+		while (false && bestSolution.getSoftConstraintPenalty() != 0 &&
 				!isCancelled.get()) {
 			// Genetic operators:
 			Timetable[] parents = rouletteWheelSelectParents(population);
@@ -176,7 +176,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private Timetable chooseBestSolution(List<Timetable> solutions) {
 		Timetable bestSolution = solutions.get(0);
 		for (Timetable solution : solutions) {
-			if (solution.getSoftConstraintPenalty() >
+			if (solution.getSoftConstraintPenalty() <
 					bestSolution.getSoftConstraintPenalty()) {
 				bestSolution = solution;
 			}
