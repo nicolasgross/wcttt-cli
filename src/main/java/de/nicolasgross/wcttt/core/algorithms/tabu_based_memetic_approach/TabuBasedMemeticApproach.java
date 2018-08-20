@@ -8,6 +8,7 @@ import de.nicolasgross.wcttt.core.algorithms.ParameterType;
 import de.nicolasgross.wcttt.core.algorithms.ParameterValue;
 import de.nicolasgross.wcttt.lib.model.Semester;
 import de.nicolasgross.wcttt.lib.model.Timetable;
+import de.nicolasgross.wcttt.lib.util.ConstraintViolationsCalculator;
 
 import java.util.*;
 
@@ -120,7 +121,10 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		List<Timetable> population =
 				satDegHeuristic.generateFeasibleSolutions(populationSize);
 
-		population.forEach(t -> t.calcConstraintViolations(semester));
+		ConstraintViolationsCalculator constrCalc =
+				new ConstraintViolationsCalculator(semester);
+		population.forEach(t -> t.setSoftConstraintPenalty(
+				constrCalc.calcTimetablePenalty(t)));
 		Timetable bestSolution = chooseBestSolution(population);
 		Queue<NeighborhoodStructure> tabuList = new LinkedList<>();
 		boolean chooseNewNbs = true; // Nbs == neighborhood structure
@@ -146,7 +150,8 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 			// Calculate constraint violations of new solutions:
 			List<Timetable> allNewSolutions = Arrays.asList(offspring[0],
 					offspring[1], improvedOffspring[0], improvedOffspring[1]);
-			allNewSolutions.forEach(t -> t.calcConstraintViolations(semester));
+			allNewSolutions.forEach(t -> t.setSoftConstraintPenalty(
+					constrCalc.calcTimetablePenalty(t)));
 			Timetable bestNewSolution = chooseBestSolution(allNewSolutions);
 
 			// Update best solution and selected neighborhood structure:

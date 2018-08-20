@@ -15,6 +15,7 @@ public class SaturationDegreeHeuristic {
 
 	List<Timetable> generateFeasibleSolutions(int count) {
 		// TODO
+		// first create fixed pre assignments
 		return null;
 	}
 }
