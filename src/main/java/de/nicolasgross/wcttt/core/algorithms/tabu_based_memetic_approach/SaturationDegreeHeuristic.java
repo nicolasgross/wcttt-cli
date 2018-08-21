@@ -37,13 +37,18 @@ class SaturationDegreeHeuristic {
 		sortSessionsByMaxConflicts(allSessions, sessionSessionConflicts,
 				sessionRoomConflicts, teacherPeriodConflicts);
 
+		List<Period> allPeriods = createPeriodList();
+
 		List<Timetable> generatedTimetables = new LinkedList<>();
 
 		for (int i = 0; i < count; i++) {
-			List<Session> remainingSessions = new LinkedList<>(allSessions);
+			List<Session> unassignedSessions = new LinkedList<>(allSessions);
+			List<Period> unassignedPeriods = new LinkedList<>(allPeriods);
 			Timetable timetable = new Timetable();
 			addTimetablePeriods(timetable);
-			addFixedPreAssignments(timetable, remainingSessions);
+
+			addFixedPreAssignments(timetable, unassignedSessions,
+					unassignedPeriods);
 
 
 
@@ -103,6 +108,23 @@ class SaturationDegreeHeuristic {
 		return counter;
 	}
 
+	private List<Period> createPeriodList() {
+		List<Period> periods = new LinkedList<>();
+		for (int i = 1; i <= semester.getDaysPerWeek(); i++) {
+			for (int j = 1; j <= semester.getTimeSlotsPerDay(); j++) {
+				Period period;
+				try {
+					period = new Period(i, j);
+				} catch (WctttModelException e) {
+					throw new WctttCoreFatalException("Implementation error, " +
+							"a period was created with illegal parameters", e);
+				}
+				periods.add(period);
+			}
+		}
+		return periods;
+	}
+
 	private void addTimetablePeriods(Timetable timetable) {
 		try {
 			for (int i = 1; i <= semester.getDaysPerWeek(); i++) {
@@ -121,31 +143,37 @@ class SaturationDegreeHeuristic {
 	}
 
 	private void addFixedPreAssignments(Timetable timetable,
-	                                    List<Session> remainingSessions)
+	                                    List<Session> unassignedSessions,
+	                                    List<Period> unassignedPeriods)
 			throws WctttCoreException {
 		List<Session> removeBecauseAssigned = new LinkedList<>();
-		for (Session session : remainingSessions) {
+		for (Session session : unassignedSessions) {
+			int day, timeSlot;
 			if (session instanceof ExternalSession) {
 				// Pre-assignment must be present because it is an external
 				// session
-				addTimetableAssignment(session.getPreAssignment().get().getDay(),
-						session.getPreAssignment().get().getTimeSlot(), session,
+				day = session.getPreAssignment().get().getDay();
+				timeSlot = session.getPreAssignment().get().getTimeSlot();
+				addTimetableAssignment(day, timeSlot, session,
 						((ExternalSession) session).getRoom(), timetable
 				);
 				removeBecauseAssigned.add(session);
+				removePeriod(day, timeSlot, unassignedPeriods);
 			} else if (session.getPreAssignment().isPresent()) {
 				TimetableAssignment assignment = new TimetableAssignment();
 				assignment.setSession(session);
 				InternalRoom randomRoom = selectRandomSuitableRoom(
 						(InternalSession) session,
 						session.getPreAssignment().get(), timetable);
-				addTimetableAssignment(session.getPreAssignment().get().getDay(),
-						session.getPreAssignment().get().getTimeSlot(),
-						session, randomRoom, timetable);
+				day = session.getPreAssignment().get().getDay();
+				timeSlot = session.getPreAssignment().get().getTimeSlot();
+				addTimetableAssignment(day, timeSlot, session, randomRoom,
+						timetable);
 				removeBecauseAssigned.add(session);
+				removePeriod(day, timeSlot, unassignedPeriods);
 			}
 		}
-		remainingSessions.removeAll(removeBecauseAssigned);
+		unassignedSessions.removeAll(removeBecauseAssigned);
 	}
 
 	private void addTimetableAssignment(int day, int timeSlot, Session session,
@@ -198,6 +226,16 @@ class SaturationDegreeHeuristic {
 			throw new WctttCoreException("No suitable room was found");
 		} else {
 			return suitableRooms.get(new Random().nextInt(suitableRooms.size()));
+		}
+	}
+
+	private void removePeriod(int day, int timeSlot,
+	                          List<Period> unassignedPeriods) {
+		try {
+			unassignedPeriods.remove(new Period(day, timeSlot));
+		} catch (WctttModelException e) {
+			throw new WctttCoreFatalException("Implementation error, " +
+					"a period was created with illegal parameters", e);
 		}
 	}
 }
