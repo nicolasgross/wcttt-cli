@@ -58,7 +58,8 @@ class SaturationDegreeHeuristic {
 			addPreAssignments(externalSessions, unassignedSessions, timetable,
 					periodUsages, unassignedPeriods, assignmentMap);
 
-			while (!unassignedPeriods.isEmpty()) {
+			boolean couldFindAssignment = true;
+			while (couldFindAssignment && !unassignedSessions.isEmpty()) {
 				InternalSession next;
 				List<InternalSession> maxSatDegrees =
 						maxSaturationDegrees(unassignedSessions, assignmentMap);
@@ -68,12 +69,16 @@ class SaturationDegreeHeuristic {
 					next = maxSatDegrees.get(0);
 				}
 
-				// TODO exception and try again
-				assignSessionRandomly(next, timetable, periodUsages,
-						unassignedPeriods, assignmentMap);
+				couldFindAssignment = assignSessionRandomly(next, timetable,
+						unassignedSessions, periodUsages, unassignedPeriods,
+						assignmentMap);
 			}
 
-			generatedTimetables.add(timetable);
+			if (couldFindAssignment) {
+				generatedTimetables.add(timetable);
+			} else {
+				i--;
+			}
 		}
 
 		return generatedTimetables;
@@ -225,7 +230,10 @@ class SaturationDegreeHeuristic {
 			throws WctttCoreException {
 		List<InternalRoom> suitableRooms = new LinkedList<>();
 		semester.getInternalRooms().forEach(room -> {
-			if (room.getFeatures().compareTo(session.getRoomRequirements()) >= 0) {
+			if (room.getFeatures().compareTo(session.getRoomRequirements()) >= 0 &&
+					(!room.getHolder().isPresent() ||
+							(room.getHolder().isPresent() && room.getHolder().equals(
+									session.getCourse().getChair())))) {
 				suitableRooms.add(room);
 			}
 		});
@@ -339,10 +347,11 @@ class SaturationDegreeHeuristic {
 		return counter;
 	}
 
-	private void assignSessionRandomly(InternalSession session, Timetable timetable,
-	                                   Map<Period, Integer> periodUsages,
-	                                   Map<InternalRoom, List<Period>> unassignedPeriods,
-	                                   Map<Session, TimetableAssignment> assignmentMap)
+	private boolean assignSessionRandomly(InternalSession session, Timetable timetable,
+	                                      List<InternalSession> unassignedSessions,
+	                                      Map<Period, Integer> periodUsages,
+	                                      Map<InternalRoom, List<Period>> unassignedPeriods,
+	                                      Map<Session, TimetableAssignment> assignmentMap)
 			throws WctttCoreException {
 		List<Period> orderedPeriods = getPeriodsOrderedByLowestNumber(periodUsages);
 		List<InternalRoom> suitableRooms = findSuitableRooms(session);
@@ -354,15 +363,15 @@ class SaturationDegreeHeuristic {
 					try {
 						assignSession(session, period, room, timetable,
 								periodUsages, unassignedPeriods, assignmentMap);
+						unassignedSessions.remove(session);
+						return true;
 					} catch (WctttCoreException e) {
 						// ignore hard constraint violation and search on
 					}
 				}
 			}
 		}
-
-		throw new WctttCoreException("DSATUR heuristic could not find a " +
-				"feasible solution"); // todo discard timetable and try again?
+		return false;
 	}
 
 	/**
@@ -383,6 +392,8 @@ class SaturationDegreeHeuristic {
 				unusedPeriods.add(key);
 			}
 		});
+		Collections.shuffle(alreadyUsedPeriods);
+		Collections.shuffle(unusedPeriods);
 
 		List<Period> orderedList = new LinkedList<>(alreadyUsedPeriods);
 		orderedList.sort((o1, o2) -> {
