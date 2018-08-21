@@ -3,10 +3,12 @@ package de.nicolasgross.wcttt.core.algorithms.tabu_based_memetic_approach;
 import de.nicolasgross.wcttt.core.WctttCoreException;
 import de.nicolasgross.wcttt.core.WctttCoreFatalException;
 import de.nicolasgross.wcttt.lib.model.*;
+import de.nicolasgross.wcttt.lib.util.ConflictMatrixCalculator;
+import de.nicolasgross.wcttt.lib.util.SessionRoomConflict;
+import de.nicolasgross.wcttt.lib.util.SessionSessionConflict;
+import de.nicolasgross.wcttt.lib.util.TeacherPeriodConflict;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 class SaturationDegreeHeuristic {
 
@@ -23,6 +25,18 @@ class SaturationDegreeHeuristic {
 			allSessions.addAll(course.getPracticals());
 		}
 
+		ConflictMatrixCalculator matrixCalculator =
+				new ConflictMatrixCalculator(semester);
+		Map<Session, Map<Session, SessionSessionConflict>> sessionSessionConflicts =
+				matrixCalculator.calcSessionSessionConflicts();
+		Map<InternalSession, Map<InternalRoom, SessionRoomConflict>> sessionRoomConflicts =
+				matrixCalculator.calcSessionRoomConflicts();
+		Map<Teacher, Map<Period, TeacherPeriodConflict>> teacherPeriodConflicts =
+				matrixCalculator.calcTeacherPeriodConflicts();
+
+		sortSessionsByMaxConflicts(allSessions, sessionSessionConflicts,
+				sessionRoomConflicts, teacherPeriodConflicts);
+
 		List<Timetable> generatedTimetables = new LinkedList<>();
 
 		for (int i = 0; i < count; i++) {
@@ -31,12 +45,62 @@ class SaturationDegreeHeuristic {
 			addTimetablePeriods(timetable);
 			addFixedPreAssignments(timetable, remainingSessions);
 
-			// TODO
+
 
 			generatedTimetables.add(timetable);
 		}
 
 		return generatedTimetables;
+	}
+
+	private void sortSessionsByMaxConflicts(List<Session> allSessions,
+			Map<Session, Map<Session, SessionSessionConflict>> sessionSessionConflicts,
+			Map<InternalSession, Map<InternalRoom, SessionRoomConflict>> sessionRoomConflicts,
+			Map<Teacher, Map<Period, TeacherPeriodConflict>> teacherPeriodConflicts) {
+			Map<Session, Integer>  conflictNumbers = new HashMap<>();
+			for (Session session : allSessions) {
+				conflictNumbers.put(session, calcConflictsForSession(
+						session, sessionSessionConflicts, sessionRoomConflicts,
+						teacherPeriodConflicts));
+			}
+			allSessions.sort(Comparator.comparingInt(conflictNumbers::get));
+	}
+
+	private int calcConflictsForSession(Session session,
+			Map<Session, Map<Session, SessionSessionConflict>> sessionSessionConflicts,
+			Map<InternalSession, Map<InternalRoom, SessionRoomConflict>> sessionRoomConflicts,
+			Map<Teacher, Map<Period, TeacherPeriodConflict>> teacherPeriodConflicts) {
+		int counter = 0;
+		Map<Session, SessionSessionConflict> sessionConflicts =
+				sessionSessionConflicts.get(session);
+		for (SessionSessionConflict conflict : sessionConflicts.values()) {
+			if (conflict != null) {
+				counter += conflict.getCurricula().size();
+				if (conflict.isSessionConflict()) {
+					counter++;
+				}
+				if (conflict.isTeacherConflict()) {
+					counter++;
+				}
+			}
+		}
+		if (session instanceof InternalSession) {
+			Map<InternalRoom, SessionRoomConflict> roomConflicts =
+					sessionRoomConflicts.get(session);
+			for (SessionRoomConflict conflict : roomConflicts.values()) {
+				if (!conflict.fullfillsFeatures()) {
+					counter++;
+				}
+			}
+		}
+		Map<Period, TeacherPeriodConflict> periodConflicts =
+				teacherPeriodConflicts.get(session.getTeacher());
+		for (TeacherPeriodConflict conflict : periodConflicts.values()) {
+			if (conflict.isUnavailable()) {
+				counter++;
+			}
+		}
+		return counter;
 	}
 
 	private void addTimetablePeriods(Timetable timetable) {
@@ -66,8 +130,8 @@ class SaturationDegreeHeuristic {
 				// session
 				addTimetableAssignment(session.getPreAssignment().get().getDay(),
 						session.getPreAssignment().get().getTimeSlot(), session,
-						((ExternalSession) session).getRoom(), timetable,
-						remainingSessions);
+						((ExternalSession) session).getRoom(), timetable
+				);
 				removeBecauseAssigned.add(session);
 			} else if (session.getPreAssignment().isPresent()) {
 				TimetableAssignment assignment = new TimetableAssignment();
@@ -77,7 +141,7 @@ class SaturationDegreeHeuristic {
 						session.getPreAssignment().get(), timetable);
 				addTimetableAssignment(session.getPreAssignment().get().getDay(),
 						session.getPreAssignment().get().getTimeSlot(),
-						session, randomRoom, timetable, remainingSessions);
+						session, randomRoom, timetable);
 				removeBecauseAssigned.add(session);
 			}
 		}
@@ -85,8 +149,7 @@ class SaturationDegreeHeuristic {
 	}
 
 	private void addTimetableAssignment(int day, int timeSlot, Session session,
-	                                    Room room, Timetable timetable,
-	                                    List<Session> remainingSessions) {
+	                                    Room room, Timetable timetable) {
 		TimetableAssignment firstSession = new TimetableAssignment();
 		firstSession.setSession(session);
 		firstSession.setRoom(room);
