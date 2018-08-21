@@ -35,22 +35,7 @@ class SaturationDegreeHeuristic {
 	List<Timetable> generateFeasibleSolutions(int count) throws WctttCoreException {
 		List<InternalSession> internalSessions = new LinkedList<>();
 		List<ExternalSession> externalSessions = new LinkedList<>();
-		for (Course course : semester.getCourses()) {
-			for (Session lecture : course.getLectures()) {
-				if (lecture instanceof InternalSession) {
-					internalSessions.add((InternalSession) lecture);
-				} else {
-					externalSessions.add((ExternalSession) lecture);
-				}
-			}
-			for (Session practical : course.getPracticals()) {
-				if (practical instanceof InternalSession) {
-					internalSessions.add((InternalSession) practical);
-				} else {
-					externalSessions.add((ExternalSession) practical);
-				}
-			}
-		}
+		fillSessionLists(internalSessions, externalSessions);
 		List<Period> periods = createPeriodList();
 
 		List<Timetable> generatedTimetables = new LinkedList<>();
@@ -76,7 +61,7 @@ class SaturationDegreeHeuristic {
 			addPreAssignments(timetable, externalSessions, unassignedSessions,
 					periodUsages, unassignedPeriods, assignmentMap);
 
-			while (!unassignedPeriods.isEmpty()) {
+			while (false && !unassignedPeriods.isEmpty()) {
 				Session next;
 				List<InternalSession> maxSatDegrees =
 						maxSaturationDegrees(unassignedSessions, assignmentMap);
@@ -96,90 +81,23 @@ class SaturationDegreeHeuristic {
 		return generatedTimetables;
 	}
 
-	// TODO hashcode methods
-	// TODO period, internalroom, session, internalsession, teacher
-
-	private List<InternalSession> maxSaturationDegrees(
-			List<InternalSession> unassignedSessions,
-			Map<Session, TimetableAssignment> assignmentMap) {
-		List<InternalSession> maxSatDegrees = new LinkedList<>();
-
-		Map<InternalSession, Integer> saturationDegrees = new HashMap<>();
-		int max = 0;
-		for (InternalSession session : unassignedSessions) {
-			int counter = 0;
-			for (Map.Entry<Session, SessionSessionConflict> entry :
-					sessionSessionConflicts.get(session).entrySet()) {
-				if (!entry.getKey().equals(session) &&
-						(!entry.getValue().getCurricula().isEmpty() ||
-								entry.getValue().isSessionConflict() ||
-								entry.getValue().isTeacherConflict())) {
-					if (assignmentMap.get(entry.getKey()) != null) {
-						counter++;
-					}
+	private void fillSessionLists(List<InternalSession> internalSessions, List<ExternalSession> externalSessions) {
+		for (Course course : semester.getCourses()) {
+			for (Session lecture : course.getLectures()) {
+				if (lecture instanceof InternalSession) {
+					internalSessions.add((InternalSession) lecture);
+				} else {
+					externalSessions.add((ExternalSession) lecture);
 				}
 			}
-			if (counter > max) {
-				max = counter;
-			}
-			saturationDegrees.put(session, counter);
-		}
-
-		for (Map.Entry<InternalSession, Integer> entry : saturationDegrees.entrySet()) {
-			if (entry.getValue() == max) {
-				maxSatDegrees.add(entry.getKey());
-			}
-		}
-
-		return maxSatDegrees;
-	}
-
-	private InternalSession maxConflictedSession(List<InternalSession> sessions) {
-		InternalSession maxSession = sessions.get(0);
-		int maxConflicts = calcNumberOfConflicts(maxSession);
-		int tmp;
-		for (InternalSession session : sessions) {
-			tmp = calcNumberOfConflicts(session);
-			if (tmp > maxConflicts) {
-				maxConflicts = tmp;
-				maxSession = session;
-			}
-		}
-		return maxSession;
-	}
-
-	private int calcNumberOfConflicts(Session session) {
-		int counter = 0;
-		Map<Session, SessionSessionConflict> sessionConflicts =
-				sessionSessionConflicts.get(session);
-		for (SessionSessionConflict conflict : sessionConflicts.values()) {
-			if (conflict != null) {
-				counter += conflict.getCurricula().size();
-				if (conflict.isSessionConflict()) {
-					counter++;
-				}
-				if (conflict.isTeacherConflict()) {
-					counter++;
+			for (Session practical : course.getPracticals()) {
+				if (practical instanceof InternalSession) {
+					internalSessions.add((InternalSession) practical);
+				} else {
+					externalSessions.add((ExternalSession) practical);
 				}
 			}
 		}
-		if (session instanceof InternalSession) {
-			Map<InternalRoom, SessionRoomConflict> roomConflicts =
-					sessionRoomConflicts.get(session);
-			for (SessionRoomConflict conflict : roomConflicts.values()) {
-				if (!conflict.fullfillsFeatures()) {
-					counter++;
-				}
-			}
-		}
-		Map<Period, TeacherPeriodConflict> periodConflicts =
-				teacherPeriodConflicts.get(session.getTeacher());
-		for (TeacherPeriodConflict conflict : periodConflicts.values()) {
-			if (conflict.isUnavailable()) {
-				counter++;
-			}
-		}
-		return counter;
 	}
 
 	private List<Period> createPeriodList() {
@@ -302,5 +220,88 @@ class SaturationDegreeHeuristic {
 		} else {
 			return suitableRooms.get(new Random().nextInt(suitableRooms.size()));
 		}
+	}
+
+	private List<InternalSession> maxSaturationDegrees(
+			List<InternalSession> unassignedSessions,
+			Map<Session, TimetableAssignment> assignmentMap) {
+		List<InternalSession> maxSatDegrees = new LinkedList<>();
+
+		Map<InternalSession, Integer> saturationDegrees = new HashMap<>();
+		int max = 0;
+		for (InternalSession session : unassignedSessions) {
+			int counter = 0;
+			for (Map.Entry<Session, SessionSessionConflict> entry :
+					sessionSessionConflicts.get(session).entrySet()) {
+				if (!entry.getKey().equals(session) &&
+						(!entry.getValue().getCurricula().isEmpty() ||
+								entry.getValue().isSessionConflict() ||
+								entry.getValue().isTeacherConflict())) {
+					if (assignmentMap.get(entry.getKey()) != null) {
+						counter++;
+					}
+				}
+			}
+			if (counter > max) {
+				max = counter;
+			}
+			saturationDegrees.put(session, counter);
+		}
+
+		for (Map.Entry<InternalSession, Integer> entry : saturationDegrees.entrySet()) {
+			if (entry.getValue() == max) {
+				maxSatDegrees.add(entry.getKey());
+			}
+		}
+
+		return maxSatDegrees;
+	}
+
+	private InternalSession maxConflictedSession(List<InternalSession> sessions) {
+		InternalSession maxSession = sessions.get(0);
+		int maxConflicts = calcNumberOfConflicts(maxSession);
+		int tmp;
+		for (InternalSession session : sessions) {
+			tmp = calcNumberOfConflicts(session);
+			if (tmp > maxConflicts) {
+				maxConflicts = tmp;
+				maxSession = session;
+			}
+		}
+		return maxSession;
+	}
+
+	private int calcNumberOfConflicts(Session session) {
+		int counter = 0;
+		Map<Session, SessionSessionConflict> sessionConflicts =
+				sessionSessionConflicts.get(session);
+		for (SessionSessionConflict conflict : sessionConflicts.values()) {
+			if (conflict != null) {
+				counter += conflict.getCurricula().size();
+				if (conflict.isSessionConflict()) {
+					counter++;
+				}
+				if (conflict.isTeacherConflict()) {
+					counter++;
+				}
+			}
+		}
+		if (session instanceof InternalSession) {
+			Map<InternalRoom, SessionRoomConflict> roomConflicts =
+					sessionRoomConflicts.get(session);
+			for (SessionRoomConflict conflict : roomConflicts.values()) {
+				if (!conflict.fullfillsFeatures()) {
+					counter++;
+				}
+			}
+		}
+		Map<Period, TeacherPeriodConflict> periodConflicts =
+				teacherPeriodConflicts.get(session.getTeacher());
+		for (TeacherPeriodConflict conflict : periodConflicts.values()) {
+			if (conflict.isUnavailable()) {
+				counter++;
+			}
+		}
+		return counter;
 	}
 }
