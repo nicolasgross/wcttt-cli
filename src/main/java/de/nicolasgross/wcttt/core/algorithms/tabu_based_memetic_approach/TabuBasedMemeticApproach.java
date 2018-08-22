@@ -115,20 +115,28 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
 	@Override
 	protected Timetable runAlgorithm() throws WctttCoreException {
-		// Generate random initial population of feasible solutions
+		// Generate random initial population of feasible solutions:
 		SaturationDegreeHeuristic satDegHeuristic =
 				new SaturationDegreeHeuristic(semester);
-		List<Timetable> population =
-				satDegHeuristic.generateFeasibleSolutions(populationSize);
+		List<Timetable> population = satDegHeuristic.generateFeasibleSolutions(
+				populationSize, isCancelled);
 
+		// If initialization of population was cancelled before a feasible
+		// solution was found, then return no feasible solution:
+		if (population.isEmpty()) {
+			return null;
+		}
+
+		// Find best solution:
 		ConstraintViolationsCalculator constrCalc =
 				new ConstraintViolationsCalculator(semester);
 		population.forEach(t -> t.setSoftConstraintPenalty(
 				constrCalc.calcTimetablePenalty(t)));
 		Timetable bestSolution = chooseBestSolution(population);
+
 		Queue<NeighborhoodStructure> tabuList = new LinkedList<>();
 		boolean chooseNewNbs = true; // Nbs == neighborhood structure
-		NeighborhoodStructure selectedNbs = null;
+		NeighborhoodStructure selectedNbs;
 
 		while (false && bestSolution.getSoftConstraintPenalty() != 0 &&
 				!isCancelled.get()) {

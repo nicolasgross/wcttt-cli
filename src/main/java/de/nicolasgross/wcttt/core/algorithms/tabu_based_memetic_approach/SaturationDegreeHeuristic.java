@@ -6,6 +6,7 @@ import de.nicolasgross.wcttt.lib.model.*;
 import de.nicolasgross.wcttt.lib.util.*;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 /**
@@ -29,7 +30,8 @@ class SaturationDegreeHeuristic {
 		teacherPeriodConflicts = matrixCalculator.calcTeacherPeriodConflicts();
 	}
 
-	List<Timetable> generateFeasibleSolutions(int count) throws WctttCoreException {
+	List<Timetable> generateFeasibleSolutions(int count, AtomicBoolean isCancelled)
+			throws WctttCoreException {
 		List<InternalSession> internalSessions = new LinkedList<>();
 		List<ExternalSession> externalSessions = new LinkedList<>();
 		fillSessionLists(internalSessions, externalSessions);
@@ -37,7 +39,7 @@ class SaturationDegreeHeuristic {
 
 		List<Timetable> generatedTimetables = new LinkedList<>();
 
-		for (int i = 0; i < count; i++) {
+		for (int i = 0; i < count && !isCancelled.get(); i++) {
 			List<InternalSession> unassignedSessions =
 					new LinkedList<>(internalSessions);
 
@@ -59,7 +61,8 @@ class SaturationDegreeHeuristic {
 					periodUsages, unassignedPeriods, assignmentMap);
 
 			boolean couldFindAssignment = true;
-			while (couldFindAssignment && !unassignedSessions.isEmpty()) {
+			while (couldFindAssignment && !unassignedSessions.isEmpty() &&
+					!isCancelled.get()) {
 				InternalSession next;
 				List<InternalSession> maxSatDegrees =
 						maxSaturationDegrees(unassignedSessions, assignmentMap);
