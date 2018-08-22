@@ -235,10 +235,7 @@ class SaturationDegreeHeuristic {
 			throws WctttCoreException {
 		List<InternalRoom> suitableRooms = new LinkedList<>();
 		semester.getInternalRooms().forEach(room -> {
-			if (room.getFeatures().compareTo(session.getRoomRequirements()) >= 0 &&
-					(!room.getHolder().isPresent() ||
-							(room.getHolder().isPresent() && room.getHolder().equals(
-									session.getCourse().getChair())))) {
+			if (room.getFeatures().compareTo(session.getRoomRequirements()) >= 0) {
 				suitableRooms.add(room);
 			}
 		});
