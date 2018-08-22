@@ -12,6 +12,12 @@ import de.nicolasgross.wcttt.lib.util.ConstraintViolationsCalculator;
 
 import java.util.*;
 
+/**
+ * Implementation of the tabu-based memetic approach, which was proposed by
+ * Salwani Abdullah and Hamza Turabieh in 'On the use of multi neighbourhood
+ * structures within a Tabu-based memetic approach to university timetabling
+ * problems', 2012.
+ */
 public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
 	private static final String NAME = "Tabu-based memetic approach";
@@ -27,7 +33,9 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private static final double MUTATION_RATE_MAX = 1.0;
 	private static final int TABU_LIST_SIZE_MIN = 1;
 	private static final List<NeighborhoodStructure> NBS_LIST = Arrays.asList(
-			new NeighborhoodStructure1());
+			new NeighborhoodStructure1()
+			// TODO add more
+			);
 
 	private int populationSize;
 	private double crossoverRate;

@@ -10,9 +10,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 /**
+ * Implementation of the saturation degree heuristic, which was proposed by
+ * Daniel Brélaz in 'New methods to color the vertices of a graph', 1979.
  *
- * Period == Color
  * Session == Vertex
+ * Period == Color
  */
 class SaturationDegreeHeuristic {
 
