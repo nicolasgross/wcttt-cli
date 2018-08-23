@@ -26,7 +26,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 			new ParameterDefinition("Crossover rate", ParameterType.DOUBLE),
 			new ParameterDefinition("Mutation rate", ParameterType.DOUBLE),
 			new ParameterDefinition("Tabu list size", ParameterType.INT));
-	private static final int POPULATION_SIZE_MIN = 1;
+	private static final int POPULATION_SIZE_MIN = 2;
 	private static final double CROSSOVER_RATE_MIN = 0.0;
 	private static final double CROSSOVER_RATE_MAX = 1.0;
 	private static final double MUTATION_RATE_MIN = 0.0;
@@ -34,7 +34,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private static final int TABU_LIST_SIZE_MIN = 1;
 	private static final List<NeighborhoodStructure> NBS_LIST = Arrays.asList(
 			new NeighborhoodStructure1()
-			// TODO add more
+			// TODO add more neighborhood structures
 			);
 
 	private int populationSize;
@@ -156,7 +156,8 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
 			// Local search:
 			if (chooseNewNbs) {
-				selectedNbs = selectNbs(tabuList);
+				selectedNbs = selectNbsRandomly(tabuList);
+				// TODO other selection strategies as proposed in the paper
 			}
 			Timetable[] improvedOffspring = {new Timetable(offspring[0]),
 					new Timetable(offspring[1])};
@@ -200,10 +201,60 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		return bestSolution;
 	}
 
+	/**
+	 * Selects two distinct parents using a roulette wheel selection, where the
+	 * selection probability p of a solution is defined by the following formula:
+	 *
+	 * p = x / y,
+	 *
+	 * where x is the fitness value of the solution and y is the sum of all
+	 * solutions' fitness values.
+	 *
+	 * @param population the population.
+	 * @return the selected parents.
+	 */
 	private Timetable[] rouletteWheelSelectParents(List<Timetable> population) {
 		Timetable[] parents = new Timetable[2];
-		// TODO
+		double[] fitnessValues = new double[population.size()];
+		double fitnessSum = 0.0;
+		double highestPenalty =
+				chooseWorstSolution(population).getSoftConstraintPenalty();
+
+		int i = 0;
+		for (Timetable timetable : population) {
+			double fitness =
+					highestPenalty - timetable.getSoftConstraintPenalty();
+			fitnessValues[i] = fitness;
+			fitnessSum += fitness;
+			i++;
+		}
+
+		while (parents[0] == null || parents[1] == null) {
+			double selection = new Random().nextDouble() * fitnessSum;
+			for (int j = 0; j < fitnessValues.length; j++) {
+				if (fitnessValues[j] - selection <= 0) {
+					if (parents[0] == null) {
+						parents[0] = population.get(j);
+					} else if (!parents[0].equals(population.get(j))) {
+						parents[1] = population.get(j);
+					}
+					break;
+				}
+			}
+		}
+
 		return parents;
+	}
+
+	private Timetable chooseWorstSolution(List<Timetable> solutions) {
+		Timetable worstSolution = solutions.get(0);
+		for (Timetable solution : solutions) {
+			if (solution.getSoftConstraintPenalty() >
+					worstSolution.getSoftConstraintPenalty()) {
+				worstSolution = solution;
+			}
+		}
+		return worstSolution;
 	}
 
 	private Timetable[] crossoverOperator(Timetable[] parents) {
@@ -216,9 +267,9 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		// TODO
 	}
 
-	private NeighborhoodStructure selectNbs(Queue<NeighborhoodStructure> tabuList) {
-		// TODO
-		return null;
+	private NeighborhoodStructure selectNbsRandomly(
+			Queue<NeighborhoodStructure> tabuList) {
+		return NBS_LIST.get(new Random().nextInt(NBS_LIST.size()));
 	}
 
 	private void localSearch(Timetable timetable,
@@ -226,8 +277,16 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		// TODO
 	}
 
+	/**
+	 * Removes the worst solution in the population and and adds another
+	 * solution to the population. If the other solution is worse than the worst
+	 * solution of the population, nothing happens.
+	 *
+	 * @param population the current population.
+	 * @param newSolution the new solution that should be added to the population.
+	 */
 	private void updatePopulation(List<Timetable> population,
-	                              Timetable bestNewSolution) {
+	                              Timetable newSolution) {
 		Timetable worstSolution = population.get(0);
 		for (Timetable timetable : population) {
 			if (timetable.getSoftConstraintPenalty() >
@@ -235,10 +294,10 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 				worstSolution = timetable;
 			}
 		}
-		if (bestNewSolution.getSoftConstraintPenalty() <
+		if (newSolution.getSoftConstraintPenalty() <
 				worstSolution.getSoftConstraintPenalty()) {
 			population.remove(worstSolution);
-			population.add(bestNewSolution);
+			population.add(newSolution);
 		}
 	}
 }
