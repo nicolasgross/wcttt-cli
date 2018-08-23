@@ -144,9 +144,9 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
 		Queue<NeighborhoodStructure> tabuList = new LinkedList<>();
 		boolean chooseNewNbs = true; // Nbs == neighborhood structure
-		NeighborhoodStructure selectedNbs;
+		NeighborhoodStructure selectedNbs = null;
 
-		while (false && bestSolution.getSoftConstraintPenalty() != 0 &&
+		while (bestSolution.getSoftConstraintPenalty() != 0 &&
 				!isCancelled.get()) {
 			// Genetic operators:
 			Timetable[] parents = rouletteWheelSelectParents(population);

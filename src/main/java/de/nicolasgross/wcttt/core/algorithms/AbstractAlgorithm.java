@@ -27,13 +27,13 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	protected abstract Timetable runAlgorithm() throws WctttCoreException;
 
 	@Override
-	public Timetable createTimetable() throws WctttCoreException {
+	public Timetable generate() throws WctttCoreException {
 		isCancelled.set(false);
 		return runAlgorithm();
 	}
 
 	@Override
-	public void cancelTimetableCreation() {
+	public void cancel() {
 		isCancelled.set(true);
 	}
 

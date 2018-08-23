@@ -183,7 +183,7 @@ public class Main {
 		System.out.println("Enter 'q' to exit the algorithm");
 		Timetable timetable;
 		try {
-			timetable = selectedAlgorithm.createTimetable();
+			timetable = selectedAlgorithm.generate();
 		} catch (WctttCoreException e) {
 			throw new WctttCoreException("A problem occurred while running " +
 					"the algorithm", e);
@@ -218,7 +218,7 @@ public class Main {
 					while (!finished.get() &&
 							(line = inputReader.readLine()) != null) {
 						if (line.equals("q")) {
-							selectedAlgorithm.cancelTimetableCreation();
+							selectedAlgorithm.cancel();
 							break;
 						}
 					}
