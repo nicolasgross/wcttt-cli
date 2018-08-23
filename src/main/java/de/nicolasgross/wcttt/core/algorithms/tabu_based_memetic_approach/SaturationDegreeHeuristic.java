@@ -32,6 +32,16 @@ class SaturationDegreeHeuristic {
 		teacherPeriodConflicts = matrixCalculator.calcTeacherPeriodConflicts();
 	}
 
+	/**
+	 * Generate a number of feasible solutions. In case of a cancellation, the
+	 * list of solutions that were found so far is returned.
+	 *
+	 * @param count the number of solutions that should be generated.
+	 * @param isCancelled the status of the algorithm.
+	 * @return a list of feasible solutions containing 'count' elements.
+	 * @throws WctttCoreException if an error occurred, e.g. unrealizable room
+	 * requirements.
+	 */
 	List<Timetable> generateFeasibleSolutions(int count, AtomicBoolean isCancelled)
 			throws WctttCoreException {
 		List<InternalSession> internalSessions = new LinkedList<>();
@@ -68,6 +78,9 @@ class SaturationDegreeHeuristic {
 				InternalSession next;
 				List<InternalSession> maxSatDegrees =
 						maxSaturationDegrees(unassignedSessions, assignmentMap);
+
+				// Choose the session with the highest saturation degree, if
+				// there are multiple, choose the one with the highest degree
 				if (maxSatDegrees.size() > 1) {
 					next = maxConflictedSession(maxSatDegrees);
 				} else {
@@ -82,6 +95,9 @@ class SaturationDegreeHeuristic {
 			if (couldFindAssignment) {
 				generatedTimetables.add(timetable);
 			} else {
+				// If the heuristic failed at finding a feasible solution, the
+				// infeasible timetable is discarded and a new timetable is
+				// generated
 				i--;
 			}
 		}
@@ -266,6 +282,17 @@ class SaturationDegreeHeuristic {
 		}
 	}
 
+	/**
+	 * Calculates a list of the unassigned sessions with the highest saturation
+	 * degree. The saturation degree of a vertex (== session) is the number of
+	 * distinct colors (== periods) that are used to schedule adjacent
+	 * (== conflicted) sessions.
+	 *
+	 * @param unassignedSessions the list of unassigned sessions.
+	 * @param assignmentMap the mapping of sessions to their respective
+	 *                         assignment, or null if unassigned.
+	 * @return the list of unassigned sessions with the highest saturation degree.
+	 */
 	private List<InternalSession> maxSaturationDegrees(
 			List<InternalSession> unassignedSessions,
 			Map<Session, TimetableAssignment> assignmentMap) {
@@ -301,6 +328,12 @@ class SaturationDegreeHeuristic {
 		return maxSatDegrees;
 	}
 
+	/**
+	 * Finds the session with the highest number of conflicts.
+	 *
+	 * @param sessions the list of sessions.
+	 * @return the most conflicted session.
+	 */
 	private InternalSession maxConflictedSession(List<InternalSession> sessions) {
 		InternalSession maxSession = sessions.get(0);
 		int maxConflicts = calcNumberOfConflicts(maxSession);
@@ -349,6 +382,23 @@ class SaturationDegreeHeuristic {
 		return counter;
 	}
 
+	/**
+	 * Takes a sessions and randomly assigns it to a suitable room and period.
+	 *
+	 * In addition, some randomization is realized by shuffling the list of
+	 * suitable rooms before they are iteratively checked for a suitable period.
+	 *
+	 * @param session the session that should be assigned.
+	 * @param timetable the timetable the session should be assigned to.
+	 * @param unassignedSessions the list of unassigned sessions.
+	 * @param periodUsages the mapping of periods to their number of usages.
+	 * @param unassignedPeriods the mapping of internal rooms to the respective
+	 *                          periods where the room is still free.
+	 * @param assignmentMap the mapping of sessions to their respective
+	 *                         assignment, or null if unassigned.
+	 * @return {@code true} if an assigment was found, otherwise {@code false}.
+	 * @throws WctttCoreException if no suitable room was found.
+	 */
 	private boolean assignSessionRandomly(InternalSession session, Timetable timetable,
 	                                      List<InternalSession> unassignedSessions,
 	                                      Map<Period, Integer> periodUsages,
@@ -377,11 +427,18 @@ class SaturationDegreeHeuristic {
 	}
 
 	/**
-	 * Generates a list of all periods, ordered by their number of usages for
-	 * assignments from low to high, except for usages of 0, which resembles the
-	 * highest number.
+	 * Generates a list of all colors (== periods), ordered by their number of
+	 * usages for assignments from low to high, except for usages of 0, which
+	 * resembles the highest number in this order.
 	 *
-	 * @param periodUsages a mapping of periods to their number of usages.
+	 * In addition, some randomization is realized within this method in two ways:
+	 * 1.  The list of colors with usage >= 0 is shuffled before it is beeing
+	 * sorted, such that colors with the same value are potentially distinctly
+	 * ordered for every method call.
+	 * 2.  The list of colors with usage == 0 is shuffled and appended to the
+	 * previously sorted list.
+	 *
+	 * @param periodUsages the mapping of periods to their number of usages.
 	 * @return the ordered list of periods.
 	 */
 	private List<Period> getPeriodsOrderedByLowestNumber(Map<Period, Integer> periodUsages) {
