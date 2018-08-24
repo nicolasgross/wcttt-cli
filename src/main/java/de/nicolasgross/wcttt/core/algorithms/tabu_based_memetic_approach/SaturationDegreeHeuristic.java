@@ -195,51 +195,50 @@ class SaturationDegreeHeuristic {
 			throws WctttCoreException {
 		ConstraintViolationsCalculator constraintCalc =
 				new ConstraintViolationsCalculator(semester);
-		TimetableAssignment firstSession = new TimetableAssignment();
-		firstSession.setSession(session);
-		firstSession.setRoom(room);
-		TimetableAssignment secondSession = null;
+		TimetableAssignment firstPeriod = new TimetableAssignment();
+		firstPeriod.setSession(session);
+		firstPeriod.setRoom(room);
+		TimetableAssignment secondPeriod = null;
 		if (session.isDoubleSession()) {
-			secondSession = new TimetableAssignment();
-			secondSession.setSession(session);
-			secondSession.setRoom(room);
+			secondPeriod = new TimetableAssignment();
+			secondPeriod.setSession(session);
+			secondPeriod.setRoom(room);
 		}
 		try {
 			TimetablePeriod firstTimetablePeriod = timetable.getDays().get(
 					period.getDay() - 1).getPeriods().get(period.getTimeSlot() - 1);
 			List<ConstraintType> hardConstraintViolations = constraintCalc.
-					calcAssignmentHardViolations(firstTimetablePeriod, firstSession);
+					calcAssignmentHardViolations(firstTimetablePeriod, firstPeriod);
 			if (!hardConstraintViolations.isEmpty()) {
 				throw new WctttCoreException("Assignment of session '" +
 						session + "' to period '" + period + "' and room '" +
 						room + "' violates the following hard constraints: " +
 						hardConstraintViolations);
 			}
-			firstTimetablePeriod.addAssignment(firstSession);
-			periodUsages.put(period, periodUsages.get(period) + 1);
-			if (room instanceof InternalRoom) {
-				unassignedPeriods.get(room).remove(period);
-			}
-			assignmentMap.put(session, firstSession);
 			if (session.isDoubleSession()) {
 				TimetablePeriod secondTimetablePeriod = timetable.getDays().get(
 						period.getDay() - 1).getPeriods().get(period.getTimeSlot());
 				hardConstraintViolations = constraintCalc.calcAssignmentHardViolations(
-						secondTimetablePeriod, secondSession);
+						secondTimetablePeriod, secondPeriod);
 				if (!hardConstraintViolations.isEmpty()) {
 					throw new WctttCoreException("Assignment of session '" +
 							session + "' to period '" + period + "' and " +
 							"room '" + room + "' violates the following hard " +
 							"constraints: " + hardConstraintViolations);
 				}
-				secondTimetablePeriod.addAssignment(secondSession);
-				Period secondPeriod =
+				secondTimetablePeriod.addAssignment(secondPeriod);
+				Period periodTwo =
 						new Period(period.getDay(), period.getTimeSlot() + 1);
-				periodUsages.put(secondPeriod, periodUsages.get(secondPeriod) + 1);
+				periodUsages.put(periodTwo, periodUsages.get(periodTwo) + 1);
 				if (room instanceof InternalRoom) {
-					unassignedPeriods.get(room).remove(secondPeriod);
+					unassignedPeriods.get(room).remove(periodTwo);
 				}
-				assignmentMap.put(session, secondSession);
+			}
+			assignmentMap.put(session, firstPeriod);
+			firstTimetablePeriod.addAssignment(firstPeriod);
+			periodUsages.put(period, periodUsages.get(period) + 1);
+			if (room instanceof InternalRoom) {
+				unassignedPeriods.get(room).remove(period);
 			}
 		} catch (WctttModelException e) {
 			throw new WctttCoreFatalException("Implementation error, problem " +
@@ -412,6 +411,26 @@ class SaturationDegreeHeuristic {
 		for (Period period : orderedPeriods) {
 			for (InternalRoom room : suitableRooms) {
 				if (unassignedPeriods.get(room).contains(period)) {
+					if (session.isDoubleSession()) {
+						if (period.getTimeSlot() == semester.getTimeSlotsPerDay()) {
+							// Double session cannot be assigned to last time slot
+							continue;
+						}
+						Period next;
+						try {
+							next = new Period(period.getDay(),
+									period.getTimeSlot() + 1);
+						} catch (WctttModelException e) {
+							throw new WctttCoreFatalException("Implementation" +
+									" error, period created with illegal " +
+									"parameters", e);
+						}
+						if (!unassignedPeriods.get(room).contains(next)) {
+							// Room must also be free in the next period for a
+							// double session
+							continue;
+						}
+					}
 					try {
 						assignSession(session, period, room, timetable,
 								periodUsages, unassignedPeriods, assignmentMap);

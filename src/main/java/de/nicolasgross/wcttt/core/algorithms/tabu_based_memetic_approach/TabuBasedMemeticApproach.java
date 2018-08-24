@@ -147,7 +147,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		boolean chooseNewNbs = true; // Nbs == neighborhood structure
 		NeighborhoodStructure selectedNbs = null;
 
-		while (bestSolution.getSoftConstraintPenalty() != 0 && // TODO
+		while (bestSolution.getSoftConstraintPenalty() != 0 &&
 				!isCancelled.get()) {
 			// Genetic operators:
 			Timetable[] parents = rouletteWheelSelectParents(population);
@@ -287,6 +287,8 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		}
 	}
 
+	// TODO add constraint max 1 lecture per course per day
+
 	/**
 	 * Copies all assignment from one timetable period to another timetable
 	 * period, if the respective rooms are unassigned and no hard constraints
@@ -303,76 +305,194 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 				getPeriods().get(toChild.getTimeSlot() - 1);
 		TimetablePeriod parentPeriod = parent.getDays().get(fromParent.getDay() - 1).
 				getPeriods().get(fromParent.getTimeSlot() - 1);
+		TimetablePeriod childSecondPeriod = null;
 
+		TimetableAssignment parentSecondAssgmt = null;
 		for (TimetableAssignment parentAssgmt : parentPeriod.getAssignments()) {
+			// Pre-assigned sessions cannot be scheduled in another period:
 			if (parentAssgmt.getSession().getPreAssignment().isPresent()) {
 				continue;
 			}
+
 			if (parentAssgmt.getSession().isDoubleSession()) {
-				continue;
-				// TODO ALWAYS check for double periods
-			}
-			boolean canBeMoved = true;
-			boolean duplicateInSamePeriod = false;
-			// Check if the same room is free in child period:
-			for (TimetableAssignment childAssgmt : childPeriod.getAssignments()) {
-				if (childAssgmt.getRoom().equals(parentAssgmt.getRoom())) {
-					canBeMoved = false;
+				boolean isFirstSession = true;
+				TimetablePeriod parentSecondPeriod = null;
+				if (parentPeriod.getTimeSlot() ==
+						ValidationHelper.PERIOD_TIME_SLOT_MIN &&
+						childPeriod.getTimeSlot() ==
+								getSemester().getTimeSlotsPerDay()) {
+						// Copying not possible
+						continue;
+				} else if (parentPeriod.getTimeSlot() ==
+					getSemester().getTimeSlotsPerDay() &&
+					childPeriod.getTimeSlot() ==
+							ValidationHelper.PERIOD_TIME_SLOT_MIN) {
+					// Copying not possible
+					continue;
 				}
-				if (childAssgmt.getSession().equals(parentAssgmt.getSession())) {
-					duplicateInSamePeriod = true;
+
+				// Check whether this is the first or the second session:
+				// Check period after:
+				if (fromParent.getTimeSlot() < getSemester().getTimeSlotsPerDay()) {
+					parentSecondPeriod = parent.getDays().get(fromParent.
+							getDay() - 1).getPeriods().get(fromParent.
+							getTimeSlot());
+					parentSecondAssgmt = findAssignmentInPeriod(
+							parentAssgmt.getSession(), parentSecondPeriod);
+					if (parentSecondAssgmt != null) {
+						// Check if the child period is the last period in case
+						// the second sessions comes after this one.
+						if (childPeriod.getTimeSlot() ==
+								getSemester().getTimeSlotsPerDay()) {
+							continue;
+						}
+					}
+				}
+				if (parentSecondAssgmt == null && fromParent.getTimeSlot() >
+						ValidationHelper.PERIOD_TIME_SLOT_MIN) {
+					// If not found, check period before:
+					// Check if the child period is the first period in case
+					// the second sessions comes before this one.
+					if (childPeriod.getTimeSlot() ==
+							ValidationHelper.PERIOD_TIME_SLOT_MIN) {
+						continue;
+					}
+					parentSecondPeriod = parent.getDays().get(fromParent.
+							getDay() - 1).getPeriods().get(fromParent.
+							getTimeSlot() - 2);
+					parentSecondAssgmt = findAssignmentInPeriod(
+							parentAssgmt.getSession(), parentSecondPeriod);
+					isFirstSession = false;
+				}
+				childSecondPeriod = child.getDays().get(childPeriod.getDay() - 1).
+						getPeriods().get(isFirstSession ?
+						childPeriod.getTimeSlot() : childPeriod.getTimeSlot() - 2);
+
+				if (parentSecondAssgmt == null) {
+					throw new WctttCoreFatalException("Implementation error, " +
+							"failed to find second session of double session");
 				}
 			}
-			if (!canBeMoved) {
+
+			// Check if the same room is free in child periods:
+			boolean[] firstPeriodRoomFree =
+					checkIfRoomIsFree(childPeriod, parentAssgmt);
+			boolean canBeCopied = firstPeriodRoomFree[0];
+			boolean duplicateInFirstPeriod = firstPeriodRoomFree[1];
+			boolean duplicateInSecondPeriod = false;
+			if (canBeCopied && parentAssgmt.getSession().isDoubleSession()) {
+				boolean[] secondPeriodRoomFree =
+						checkIfRoomIsFree(childSecondPeriod, parentAssgmt);
+				canBeCopied = secondPeriodRoomFree[0];
+				duplicateInSecondPeriod = secondPeriodRoomFree[1];
+			}
+			if (!canBeCopied) {
 				continue;
 			}
 
 			TimetableAssignment newAssgmt = new TimetableAssignment(
 					parentAssgmt.getSession(), parentAssgmt.getRoom());
-
-			// Check if hard-constraints would be violated by the new assignment:
-			if (!duplicateInSamePeriod) {
-				// If the duplicate is in the same period, no constraints can be
-				// violated besides the ones created by the duplicate, which are
-				// only temporary.
-				ConstraintViolationsCalculator constrCalc =
-						new ConstraintViolationsCalculator(getSemester());
-				canBeMoved &= constrCalc.calcAssignmentHardViolations(
-						childPeriod, newAssgmt).isEmpty();
+			TimetableAssignment newSecondAssgmt = null;
+			if (parentAssgmt.getSession().isDoubleSession()) {
+				newSecondAssgmt = new TimetableAssignment(
+						parentAssgmt.getSession(), parentAssgmt.getRoom());
 			}
 
-			if (canBeMoved) {
+			// Check if hard-constraints would be violated by the new assignments:
+			ConstraintViolationsCalculator constrCalc =
+					new ConstraintViolationsCalculator(getSemester());
+			// If the duplicate is in the same period, no constraints can be
+			// violated besides the ones created by the duplicate, which are
+			// only temporary.
+			if (!duplicateInFirstPeriod) {
+				canBeCopied = constrCalc.calcAssignmentHardViolations(
+						childPeriod, newAssgmt).isEmpty();
+			}
+			if (parentAssgmt.getSession().isDoubleSession() &&
+					!duplicateInSecondPeriod) {
+				canBeCopied &= constrCalc.calcAssignmentHardViolations(
+						childSecondPeriod, newSecondAssgmt).isEmpty();
+			}
+
+			if (canBeCopied) {
 				try {
 					childPeriod.addAssignment(newAssgmt);
+					if (parentAssgmt.getSession().isDoubleSession()) {
+						childSecondPeriod.addAssignment(newSecondAssgmt);
+					}
 				} catch (WctttModelException e) {
 					throw new WctttCoreFatalException("Implementation error", e);
 				}
 
 				// Remove random duplicate:
-				if (new Random().nextDouble() > 0.5) {
-					// Remove new:
-					childPeriod.removeAssignment(newAssgmt);
-				} else {
-					// Remove old:
-					if (duplicateInSamePeriod) {
-						childPeriod.removeAssignment(parentAssgmt);
-					} else {
-						outerloop:
-						for (TimetableDay day : child.getDays()) {
-							for (TimetablePeriod period : day.getPeriods()) {
-								for (TimetableAssignment assgmt :
-										period.getAssignments()) {
-									if (assgmt.getSession().equals(
-											parentAssgmt.getSession()) &&
-											assgmt != newAssgmt) {
-										period.removeAssignment(assgmt);
-										break outerloop;
-									}
-								}
+				removeRandomDuplicate(child, childPeriod, childSecondPeriod,
+						newAssgmt, newSecondAssgmt);
+			}
+		}
+	}
+
+	private TimetableAssignment findAssignmentInPeriod(Session session,
+	                                                   TimetablePeriod period) {
+		for (TimetableAssignment assgmt : period.getAssignments()) {
+			if (assgmt.getSession().equals(session)) {
+				return assgmt;
+			}
+		}
+		return null;
+	}
+
+	private boolean[] checkIfRoomIsFree(TimetablePeriod childPeriod,
+	                                    TimetableAssignment parentAssgmt) {
+		boolean canBeCopied = true;
+		boolean duplicateInPeriod = false;
+		for (TimetableAssignment childAssgmt : childPeriod.getAssignments()) {
+			if (childAssgmt.getRoom().equals(parentAssgmt.getRoom())) {
+				canBeCopied = false;
+				break;
+			}
+			if (childAssgmt.getSession().equals(parentAssgmt.getSession())) {
+				duplicateInPeriod = true;
+			}
+		}
+		return new boolean[]{canBeCopied, duplicateInPeriod};
+	}
+
+	private void removeRandomDuplicate(
+			Timetable timetable, TimetablePeriod childPeriod, TimetablePeriod childSecondPeriod,
+			TimetableAssignment newAssgmt, TimetableAssignment newSecondAssgmt) {
+		boolean isDoubleSession = newAssgmt.getSession().isDoubleSession();
+		if (new Random().nextDouble() > 0.5) {
+			// Remove new:
+			childPeriod.removeAssignment(newAssgmt);
+			if (isDoubleSession) {
+				childSecondPeriod.removeAssignment(newSecondAssgmt);
+			}
+		} else {
+			// Remove old:
+			List<TimetablePeriod> removePeriods = new ArrayList<>(2);
+			List<TimetableAssignment> removeAssgmts = new ArrayList<>(2);
+			int removed = 0;
+			outerloop:
+			for (TimetableDay day : timetable.getDays()) {
+				for (TimetablePeriod period : day.getPeriods()) {
+					for (TimetableAssignment assgmt : period.getAssignments()) {
+						if (assgmt.getSession().equals(newAssgmt.getSession()) &&
+								(!assgmt.equals(newAssgmt) ||
+										(period.getDay() != childPeriod.getDay() ||
+												period.getTimeSlot() != childPeriod.getTimeSlot()))) {
+							removePeriods.add(period);
+							removeAssgmts.add(assgmt);
+							removed++;
+							if ((!isDoubleSession && removed == 1) ||
+									(isDoubleSession && removed == 2)) {
+								break outerloop;
 							}
 						}
 					}
 				}
+			}
+			for (int i = 0; i < removePeriods.size(); i++) {
+				removePeriods.get(i).removeAssignment(removeAssgmts.get(i));
 			}
 		}
 	}
