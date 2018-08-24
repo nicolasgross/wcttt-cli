@@ -6,8 +6,7 @@ import de.nicolasgross.wcttt.core.algorithms.AbstractAlgorithm;
 import de.nicolasgross.wcttt.core.algorithms.ParameterDefinition;
 import de.nicolasgross.wcttt.core.algorithms.ParameterType;
 import de.nicolasgross.wcttt.core.algorithms.ParameterValue;
-import de.nicolasgross.wcttt.lib.model.Semester;
-import de.nicolasgross.wcttt.lib.model.Timetable;
+import de.nicolasgross.wcttt.lib.model.*;
 import de.nicolasgross.wcttt.lib.util.ConstraintViolationsCalculator;
 
 import java.util.*;
@@ -36,7 +35,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private static final List<NeighborhoodStructure> NBS_LIST = Arrays.asList(
 			new NeighborhoodStructure1()
 			// TODO add more neighborhood structures
-			);
+	);
 
 	private int populationSize;
 	private double crossoverRate;
@@ -148,7 +147,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		boolean chooseNewNbs = true; // Nbs == neighborhood structure
 		NeighborhoodStructure selectedNbs = null;
 
-		while (bestSolution.getSoftConstraintPenalty() != 0 &&
+		while (bestSolution.getSoftConstraintPenalty() != 0 && // TODO
 				!isCancelled.get()) {
 			// Genetic operators:
 			Timetable[] parents = rouletteWheelSelectParents(population);
@@ -206,9 +205,9 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	/**
 	 * Selects two distinct parents using a roulette wheel selection, where the
 	 * selection probability p of a solution is defined by the following formula:
-	 *
-	 * p = x / y,
-	 *
+	 * <p>
+	 * p = x / y
+	 * <p>
 	 * where x is the fitness value of the solution and y is the sum of all
 	 * solutions' fitness values.
 	 *
@@ -234,10 +233,11 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		while (parents[0] == null || parents[1] == null) {
 			double selection = new Random().nextDouble() * fitnessSum;
 			for (int j = 0; j < fitnessValues.length; j++) {
-				if (fitnessValues[j] - selection <= 0) {
+				selection -= fitnessValues[j];
+				if (selection <= 0) {
 					if (parents[0] == null) {
 						parents[0] = population.get(j);
-					} else if (!parents[0].equals(population.get(j))) {
+					} else {
 						parents[1] = population.get(j);
 					}
 					break;
@@ -260,9 +260,121 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	}
 
 	private Timetable[] crossoverOperator(Timetable[] parents) {
-		Timetable[] offspring = new Timetable[2];
-		// TODO
+		Timetable[] offspring = {new Timetable(parents[0]),
+				new Timetable(parents[1])};
+		if (new Random().nextDouble() > crossoverRate) {
+			// No crossover, offspring equals parents
+			return offspring;
+		}
+
+		Period randPeriodA = selectRandomPeriod();
+		Period randPeriodB = selectRandomPeriod();
+
+		copyAssignmentsFromTo(offspring[0], parents[1], randPeriodB, randPeriodA);
+		copyAssignmentsFromTo(offspring[1], parents[0], randPeriodA, randPeriodB);
+
 		return offspring;
+	}
+
+	private Period selectRandomPeriod() {
+		try {
+			return new Period(
+					new Random().nextInt(getSemester().getDaysPerWeek()) + 1,
+					new Random().nextInt(getSemester().getTimeSlotsPerDay()) + 1);
+		} catch (WctttModelException e) {
+			throw new WctttCoreFatalException("Implementation error, period " +
+					"was created with illegal parameters", e);
+		}
+	}
+
+	/**
+	 * Copies all assignment from one timetable period to another timetable
+	 * period, if the respective rooms are unassigned and no hard constraints
+	 * are violated. Duplicates are removed.
+	 *
+	 * @param child the timetable to which assignments are added.
+	 * @param parent the timetable from which assignments are copied.
+	 * @param fromParent the period from which assignments are copied.
+	 * @param toChild the period to which assignments are added.
+	 */
+	private void copyAssignmentsFromTo(Timetable child, Timetable parent,
+	                                   Period fromParent, Period toChild) {
+		TimetablePeriod childPeriod = child.getDays().get(toChild.getDay() - 1).
+				getPeriods().get(toChild.getTimeSlot() - 1);
+		TimetablePeriod parentPeriod = parent.getDays().get(fromParent.getDay() - 1).
+				getPeriods().get(fromParent.getTimeSlot() - 1);
+
+		for (TimetableAssignment parentAssgmt : parentPeriod.getAssignments()) {
+			if (parentAssgmt.getSession().getPreAssignment().isPresent()) {
+				continue;
+			}
+			if (parentAssgmt.getSession().isDoubleSession()) {
+				continue;
+				// TODO ALWAYS check for double periods
+			}
+			boolean canBeMoved = true;
+			boolean duplicateInSamePeriod = false;
+			// Check if the same room is free in child period:
+			for (TimetableAssignment childAssgmt : childPeriod.getAssignments()) {
+				if (childAssgmt.getRoom().equals(parentAssgmt.getRoom())) {
+					canBeMoved = false;
+				}
+				if (childAssgmt.getSession().equals(parentAssgmt.getSession())) {
+					duplicateInSamePeriod = true;
+				}
+			}
+			if (!canBeMoved) {
+				continue;
+			}
+
+			TimetableAssignment newAssgmt = new TimetableAssignment(
+					parentAssgmt.getSession(), parentAssgmt.getRoom());
+
+			// Check if hard-constraints would be violated by the new assignment:
+			if (!duplicateInSamePeriod) {
+				// If the duplicate is in the same period, no constraints can be
+				// violated besides the ones created by the duplicate, which are
+				// only temporary.
+				ConstraintViolationsCalculator constrCalc =
+						new ConstraintViolationsCalculator(getSemester());
+				canBeMoved &= constrCalc.calcAssignmentHardViolations(
+						childPeriod, newAssgmt).isEmpty();
+			}
+
+			if (canBeMoved) {
+				try {
+					childPeriod.addAssignment(newAssgmt);
+				} catch (WctttModelException e) {
+					throw new WctttCoreFatalException("Implementation error", e);
+				}
+
+				// Remove random duplicate:
+				if (new Random().nextDouble() > 0.5) {
+					// Remove new:
+					childPeriod.removeAssignment(newAssgmt);
+				} else {
+					// Remove old:
+					if (duplicateInSamePeriod) {
+						childPeriod.removeAssignment(parentAssgmt);
+					} else {
+						outerloop:
+						for (TimetableDay day : child.getDays()) {
+							for (TimetablePeriod period : day.getPeriods()) {
+								for (TimetableAssignment assgmt :
+										period.getAssignments()) {
+									if (assgmt.getSession().equals(
+											parentAssgmt.getSession()) &&
+											assgmt != newAssgmt) {
+										period.removeAssignment(assgmt);
+										break outerloop;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
 	private void mutationOperator(Timetable timetable) {
@@ -284,7 +396,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	 * solution to the population. If the other solution is worse than the worst
 	 * solution of the population, nothing happens.
 	 *
-	 * @param population the current population.
+	 * @param population  the current population.
 	 * @param newSolution the new solution that should be added to the population.
 	 */
 	private void updatePopulation(List<Timetable> population,
