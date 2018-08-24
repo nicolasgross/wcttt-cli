@@ -11,6 +11,7 @@ import de.nicolasgross.wcttt.lib.model.Timetable;
 import de.nicolasgross.wcttt.lib.util.ConstraintViolationsCalculator;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of the tabu-based memetic approach, which was proposed by
@@ -122,10 +123,11 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	}
 
 	@Override
-	protected Timetable runAlgorithm() throws WctttCoreException {
+	protected Timetable runAlgorithm(AtomicBoolean isCancelled)
+			throws WctttCoreException {
 		// Generate random initial population of feasible solutions:
 		SaturationDegreeHeuristic satDegHeuristic =
-				new SaturationDegreeHeuristic(semester);
+				new SaturationDegreeHeuristic(getSemester());
 		List<Timetable> population = satDegHeuristic.generateFeasibleSolutions(
 				populationSize, isCancelled);
 
@@ -137,7 +139,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 
 		// Find best solution:
 		ConstraintViolationsCalculator constrCalc =
-				new ConstraintViolationsCalculator(semester);
+				new ConstraintViolationsCalculator(getSemester());
 		population.forEach(t -> t.setSoftConstraintPenalty(
 				constrCalc.calcTimetablePenalty(t)));
 		Timetable bestSolution = chooseBestSolution(population);

@@ -6,11 +6,20 @@ import de.nicolasgross.wcttt.lib.model.Timetable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Abstract class that can be used as a starting point to implement an algorithm.
+ * It already provides basic functionality for the cancellation of the algorithm.
+ */
 public abstract class AbstractAlgorithm implements Algorithm {
 
-	protected final Semester semester;
-	protected final AtomicBoolean isCancelled = new AtomicBoolean(false);
+	private final Semester semester;
+	private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
+	/**
+	 * Initializion of the class.
+	 *
+	 * @param semester the semester that should be used to create a new timetable.
+	 */
 	public AbstractAlgorithm(Semester semester) {
 		if (semester == null) {
 			throw new IllegalArgumentException("Parameter 'semester' must not" +
@@ -19,17 +28,30 @@ public abstract class AbstractAlgorithm implements Algorithm {
 		this.semester = semester;
 	}
 
-	private void checkSemesterConsistency() throws WctttCoreException {
+	/**
+	 * Getter for the assigned semester.
+	 *
+	 * @return the semester that is used to create new timetables.
+	 */
+	protected Semester getSemester() {
+		return semester;
 	}
 
-
-	// don't use system.in
-	protected abstract Timetable runAlgorithm() throws WctttCoreException;
+	/**
+	 * Runs the actual algorithm.
+	 *
+	 * @param isCancelled indicates whether the algorithm was cancelled and
+	 *                       should periodically be checked by the algorithm.
+	 * @return the newly created timetable.
+	 * @throws WctttCoreException if an error occurred in the algorithm.
+	 */
+	protected abstract Timetable runAlgorithm(AtomicBoolean isCancelled)
+			throws WctttCoreException;
 
 	@Override
 	public Timetable generate() throws WctttCoreException {
 		isCancelled.set(false);
-		return runAlgorithm();
+		return runAlgorithm(isCancelled);
 	}
 
 	@Override
