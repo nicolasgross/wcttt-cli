@@ -208,7 +208,8 @@ class SaturationDegreeHeuristic {
 			TimetablePeriod firstTimetablePeriod = timetable.getDays().get(
 					period.getDay() - 1).getPeriods().get(period.getTimeSlot() - 1);
 			List<ConstraintType> hardConstraintViolations = constraintCalc.
-					calcAssignmentHardViolations(firstTimetablePeriod, firstPeriod);
+					calcAssignmentHardViolations(timetable,
+							firstTimetablePeriod, firstPeriod);
 			if (!hardConstraintViolations.isEmpty()) {
 				throw new WctttCoreException("Assignment of session '" +
 						session + "' to period '" + period + "' and room '" +
@@ -219,7 +220,7 @@ class SaturationDegreeHeuristic {
 				TimetablePeriod secondTimetablePeriod = timetable.getDays().get(
 						period.getDay() - 1).getPeriods().get(period.getTimeSlot());
 				hardConstraintViolations = constraintCalc.calcAssignmentHardViolations(
-						secondTimetablePeriod, secondPeriod);
+						timetable, secondTimetablePeriod, secondPeriod);
 				if (!hardConstraintViolations.isEmpty()) {
 					throw new WctttCoreException("Assignment of session '" +
 							session + "' to period '" + period + "' and " +

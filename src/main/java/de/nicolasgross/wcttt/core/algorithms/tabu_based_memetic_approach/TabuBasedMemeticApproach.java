@@ -406,12 +406,12 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 			// only temporary.
 			if (!duplicateInFirstPeriod) {
 				canBeCopied = constrCalc.calcAssignmentHardViolations(
-						childPeriod, newAssgmt).isEmpty();
+						child, childPeriod, newAssgmt).isEmpty();
 			}
 			if (parentAssgmt.getSession().isDoubleSession() &&
 					!duplicateInSecondPeriod) {
 				canBeCopied &= constrCalc.calcAssignmentHardViolations(
-						childSecondPeriod, newSecondAssgmt).isEmpty();
+						child, childSecondPeriod, newSecondAssgmt).isEmpty();
 			}
 
 			if (canBeCopied) {
