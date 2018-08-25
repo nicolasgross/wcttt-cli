@@ -47,7 +47,7 @@ class SaturationDegreeHeuristic {
 		List<InternalSession> internalSessions = new LinkedList<>();
 		List<ExternalSession> externalSessions = new LinkedList<>();
 		fillSessionLists(internalSessions, externalSessions);
-		List<Period> periods = createPeriodList();
+		List<Period> periods = Util.createPeriodList(semester);
 
 		List<Timetable> generatedTimetables = new LinkedList<>();
 
@@ -75,21 +75,23 @@ class SaturationDegreeHeuristic {
 			boolean couldFindAssignment = true;
 			while (couldFindAssignment && !unassignedSessions.isEmpty() &&
 					!isCancelled.get()) {
-				InternalSession next;
+				InternalSession nextSession;
 				List<InternalSession> maxSatDegrees =
 						maxSaturationDegrees(unassignedSessions, assignmentMap);
 
 				// Choose the session with the highest saturation degree, if
 				// there are multiple, choose the one with the highest degree
 				if (maxSatDegrees.size() > 1) {
-					next = maxConflictedSession(maxSatDegrees);
+					nextSession = maxConflictedSession(maxSatDegrees);
 				} else {
-					next = maxSatDegrees.get(0);
+					nextSession = maxSatDegrees.get(0);
 				}
 
-				couldFindAssignment = assignSessionRandomly(next, timetable,
-						unassignedSessions, periodUsages, unassignedPeriods,
-						assignmentMap);
+				List<Period> orderedPeriods =
+						getPeriodsOrderedByLowestUsage(periodUsages);
+				couldFindAssignment = Util.assignSessionRandomly(nextSession,
+						timetable, semester, orderedPeriods, unassignedSessions,
+						periodUsages, unassignedPeriods, assignmentMap);
 			}
 
 			if (couldFindAssignment) {
@@ -125,23 +127,6 @@ class SaturationDegreeHeuristic {
 		}
 	}
 
-	private List<Period> createPeriodList() {
-		List<Period> periods = new LinkedList<>();
-		for (int i = 1; i <= semester.getDaysPerWeek(); i++) {
-			for (int j = 1; j <= semester.getTimeSlotsPerDay(); j++) {
-				Period period;
-				try {
-					period = new Period(i, j);
-				} catch (WctttModelException e) {
-					throw new WctttCoreFatalException("Implementation error, " +
-							"a period was created with illegal parameters", e);
-				}
-				periods.add(period);
-			}
-		}
-		return periods;
-	}
-
 	private void addTimetablePeriods(Timetable timetable) {
 		try {
 			for (int i = 1; i <= semester.getDaysPerWeek(); i++) {
@@ -169,8 +154,8 @@ class SaturationDegreeHeuristic {
 			// Pre-assignment must be present because it is an external
 			// session
 			Period period = session.getPreAssignment().get();
-			assignSession(session, period, session.getRoom(), timetable,
-					periodUsages, unassignedPeriods, assignmentMap);
+			Util.assignSession(session, period, session.getRoom(), timetable,
+					semester, periodUsages, unassignedPeriods, assignmentMap);
 		}
 		List<InternalSession> removeList = new LinkedList<>();
 		for (InternalSession session : unassignedSessions) {
@@ -180,95 +165,19 @@ class SaturationDegreeHeuristic {
 				Period period = session.getPreAssignment().get();
 				InternalRoom randomRoom = selectRandomSuitableRoom(session,
 						period, unassignedPeriods);
-				assignSession(session, period, randomRoom, timetable,
-						periodUsages, unassignedPeriods, assignmentMap);
+				Util.assignSession(session, period, randomRoom, timetable,
+						semester, periodUsages, unassignedPeriods, assignmentMap);
 				removeList.add(session);
 			}
 		}
 		unassignedSessions.removeAll(removeList);
 	}
 
-	private void assignSession(Session session, Period period, Room room,
-	                           Timetable timetable, Map<Period, Integer> periodUsages,
-	                           Map<InternalRoom, List<Period>> unassignedPeriods,
-	                           Map<Session, TimetableAssignment> assignmentMap)
-			throws WctttCoreException {
-		ConstraintViolationsCalculator constraintCalc =
-				new ConstraintViolationsCalculator(semester);
-		TimetableAssignment firstPeriod = new TimetableAssignment();
-		firstPeriod.setSession(session);
-		firstPeriod.setRoom(room);
-		TimetableAssignment secondPeriod = null;
-		if (session.isDoubleSession()) {
-			secondPeriod = new TimetableAssignment();
-			secondPeriod.setSession(session);
-			secondPeriod.setRoom(room);
-		}
-		try {
-			TimetablePeriod firstTimetablePeriod = timetable.getDays().get(
-					period.getDay() - 1).getPeriods().get(period.getTimeSlot() - 1);
-			List<ConstraintType> hardConstraintViolations = constraintCalc.
-					calcAssignmentHardViolations(timetable,
-							firstTimetablePeriod, firstPeriod);
-			if (!hardConstraintViolations.isEmpty()) {
-				throw new WctttCoreException("Assignment of session '" +
-						session + "' to period '" + period + "' and room '" +
-						room + "' violates the following hard constraints: " +
-						hardConstraintViolations);
-			}
-			if (session.isDoubleSession()) {
-				TimetablePeriod secondTimetablePeriod = timetable.getDays().get(
-						period.getDay() - 1).getPeriods().get(period.getTimeSlot());
-				hardConstraintViolations = constraintCalc.calcAssignmentHardViolations(
-						timetable, secondTimetablePeriod, secondPeriod);
-				if (!hardConstraintViolations.isEmpty()) {
-					throw new WctttCoreException("Assignment of session '" +
-							session + "' to period '" + period + "' and " +
-							"room '" + room + "' violates the following hard " +
-							"constraints: " + hardConstraintViolations);
-				}
-				secondTimetablePeriod.addAssignment(secondPeriod);
-				Period periodTwo =
-						new Period(period.getDay(), period.getTimeSlot() + 1);
-				periodUsages.put(periodTwo, periodUsages.get(periodTwo) + 1);
-				if (room instanceof InternalRoom) {
-					unassignedPeriods.get(room).remove(periodTwo);
-				}
-			}
-			assignmentMap.put(session, firstPeriod);
-			firstTimetablePeriod.addAssignment(firstPeriod);
-			periodUsages.put(period, periodUsages.get(period) + 1);
-			if (room instanceof InternalRoom) {
-				unassignedPeriods.get(room).remove(period);
-			}
-		} catch (WctttModelException e) {
-			throw new WctttCoreFatalException("Implementation error, problem " +
-					"while adding an assignment to the timetable", e);
-		}
-	}
-
-	private List<InternalRoom> findSuitableRooms(InternalSession session)
-			throws WctttCoreException {
-		List<InternalRoom> suitableRooms = new LinkedList<>();
-		semester.getInternalRooms().forEach(room -> {
-			if (room.getFeatures().compareTo(session.getRoomRequirements()) >= 0) {
-				suitableRooms.add(room);
-			}
-		});
-
-		if (suitableRooms.isEmpty()) {
-			throw new WctttCoreException("No suitable room was found for " +
-					"session '" + session + "'");
-		} else {
-			return suitableRooms;
-		}
-	}
-
 	private InternalRoom selectRandomSuitableRoom(InternalSession session, Period period,
 	                                              Map<InternalRoom, List<Period>> unassignedPeriods)
 			throws WctttCoreException {
 		List<InternalRoom> suitableRooms = new LinkedList<>();
-		findSuitableRooms(session).forEach(room -> {
+		Util.findSuitableRooms(session, semester).forEach(room -> {
 			if (unassignedPeriods.get(room).contains(period)) {
 				suitableRooms.add(room);
 			}
@@ -382,69 +291,6 @@ class SaturationDegreeHeuristic {
 		return counter;
 	}
 
-	/**
-	 * Takes a sessions and randomly assigns it to a suitable room and period.
-	 *
-	 * In addition, some randomization is realized by shuffling the list of
-	 * suitable rooms before they are iteratively checked for a suitable period.
-	 *
-	 * @param session the session that should be assigned.
-	 * @param timetable the timetable the session should be assigned to.
-	 * @param unassignedSessions the list of unassigned sessions.
-	 * @param periodUsages the mapping of periods to their number of usages.
-	 * @param unassignedPeriods the mapping of internal rooms to the respective
-	 *                          periods where the room is still free.
-	 * @param assignmentMap the mapping of sessions to their respective
-	 *                         assignment, or null if unassigned.
-	 * @return {@code true} if an assigment was found, otherwise {@code false}.
-	 * @throws WctttCoreException if no suitable room was found.
-	 */
-	private boolean assignSessionRandomly(InternalSession session, Timetable timetable,
-	                                      List<InternalSession> unassignedSessions,
-	                                      Map<Period, Integer> periodUsages,
-	                                      Map<InternalRoom, List<Period>> unassignedPeriods,
-	                                      Map<Session, TimetableAssignment> assignmentMap)
-			throws WctttCoreException {
-		List<Period> orderedPeriods = getPeriodsOrderedByLowestNumber(periodUsages);
-		List<InternalRoom> suitableRooms = findSuitableRooms(session);
-		Collections.shuffle(suitableRooms);
-
-		for (Period period : orderedPeriods) {
-			for (InternalRoom room : suitableRooms) {
-				if (unassignedPeriods.get(room).contains(period)) {
-					if (session.isDoubleSession()) {
-						if (period.getTimeSlot() == semester.getTimeSlotsPerDay()) {
-							// Double session cannot be assigned to last time slot
-							continue;
-						}
-						Period next;
-						try {
-							next = new Period(period.getDay(),
-									period.getTimeSlot() + 1);
-						} catch (WctttModelException e) {
-							throw new WctttCoreFatalException("Implementation" +
-									" error, period created with illegal " +
-									"parameters", e);
-						}
-						if (!unassignedPeriods.get(room).contains(next)) {
-							// Room must also be free in the next period for a
-							// double session
-							continue;
-						}
-					}
-					try {
-						assignSession(session, period, room, timetable,
-								periodUsages, unassignedPeriods, assignmentMap);
-						unassignedSessions.remove(session);
-						return true;
-					} catch (WctttCoreException e) {
-						// ignore hard constraint violation and search on
-					}
-				}
-			}
-		}
-		return false;
-	}
 
 	/**
 	 * Generates a list of all colors (== periods), ordered by their number of
@@ -461,7 +307,7 @@ class SaturationDegreeHeuristic {
 	 * @param periodUsages the mapping of periods to their number of usages.
 	 * @return the ordered list of periods.
 	 */
-	private List<Period> getPeriodsOrderedByLowestNumber(Map<Period, Integer> periodUsages) {
+	private List<Period> getPeriodsOrderedByLowestUsage(Map<Period, Integer> periodUsages) {
 		LinkedList<Period> alreadyUsedPeriods = new LinkedList<>();
 		LinkedList<Period> unusedPeriods = new LinkedList<>();
 		periodUsages.forEach((key, value) -> {

@@ -33,7 +33,7 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private static final double MUTATION_RATE_MAX = 1.0;
 	private static final int TABU_LIST_SIZE_MIN = 1;
 	private static final List<NeighborhoodStructure> NBS_LIST = Arrays.asList(
-			new NeighborhoodStructure1()
+			new NeighborhoodStructure2()
 			// TODO add more neighborhood structures
 	);
 
@@ -41,9 +41,24 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private double crossoverRate;
 	private double mutationRate;
 	private int tabuListSize;
+	private final int numberOfSessions;
 
 	public TabuBasedMemeticApproach(Semester semester) {
 		super(semester);
+		numberOfSessions = calcNumberOfSessions();
+	}
+
+	private int calcNumberOfSessions() {
+		int counter = 0;
+		for (Course course : getSemester().getCourses()) {
+			for (Session lecture : course.getLectures()) {
+				counter++;
+			}
+			for (Session practical : course.getPracticals()) {
+				counter++;
+			}
+		}
+		return counter;
 	}
 
 	@Override
@@ -178,7 +193,8 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 				bestSolution = bestNewSolution;
 				chooseNewNbs = false;
 			} else {
-				tabuList.add(selectedNbs);
+				// TODO uncomment following line if NBS_LIST.size() > tabuListSize
+				// tabuList.add(selectedNbs);
 				if (tabuList.size() > tabuListSize) {
 					tabuList.remove();
 				}
@@ -286,8 +302,6 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 					"was created with illegal parameters", e);
 		}
 	}
-
-	// TODO add constraint max 1 lecture per course per day
 
 	/**
 	 * Copies all assignment from one timetable period to another timetable
@@ -458,8 +472,9 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	}
 
 	private void removeRandomDuplicate(
-			Timetable timetable, TimetablePeriod childPeriod, TimetablePeriod childSecondPeriod,
-			TimetableAssignment newAssgmt, TimetableAssignment newSecondAssgmt) {
+			Timetable timetable, TimetablePeriod childPeriod,
+			TimetablePeriod childSecondPeriod, TimetableAssignment newAssgmt,
+			TimetableAssignment newSecondAssgmt) {
 		boolean isDoubleSession = newAssgmt.getSession().isDoubleSession();
 		if (new Random().nextDouble() > 0.5) {
 			// Remove new:
@@ -477,9 +492,9 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 				for (TimetablePeriod period : day.getPeriods()) {
 					for (TimetableAssignment assgmt : period.getAssignments()) {
 						if (assgmt.getSession().equals(newAssgmt.getSession()) &&
-								(!assgmt.equals(newAssgmt) ||
-										(period.getDay() != childPeriod.getDay() ||
-												period.getTimeSlot() != childPeriod.getTimeSlot()))) {
+								(!assgmt.equals(newAssgmt) || (period.getDay() !=
+										childPeriod.getDay() || period.getTimeSlot() !=
+										childPeriod.getTimeSlot()))) {
 							removePeriods.add(period);
 							removeAssgmts.add(assgmt);
 							removed++;
@@ -497,13 +512,39 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 		}
 	}
 
-	private void mutationOperator(Timetable timetable) {
-		// TODO
+	/**
+	 * Randomly selects a neighborhood structure and applies it with a
+	 * probability defined in the mutation rate. There are as many chances of
+	 * mutation as there are sessions in the semester.
+	 *
+	 * @param timetable the timetable that should be mutated.
+	 * @throws WctttCoreException if an error occurred in the neighborhood
+	 * structure.
+	 */
+	private void mutationOperator(Timetable timetable)
+			throws WctttCoreException {
+		NeighborhoodStructure nbs = selectNbsRandomly(null);
+		Random random = new Random();
+
+		for (int i = 0; i < numberOfSessions; i++) {
+			if (random.nextDouble() <= mutationRate) {
+				nbs.apply(timetable, getSemester());
+			}
+		}
 	}
 
 	private NeighborhoodStructure selectNbsRandomly(
 			Queue<NeighborhoodStructure> tabuList) {
-		return NBS_LIST.get(new Random().nextInt(NBS_LIST.size()));
+		if (tabuList == null || tabuList.isEmpty()) {
+			return NBS_LIST.get(new Random().nextInt(NBS_LIST.size()));
+		} else if (NBS_LIST.size() == tabuList.size()) {
+			throw new WctttCoreFatalException("Implementation error, all " +
+					"neighborhood structures are in the tabu list");
+		} else {
+			List<NeighborhoodStructure> nbsList = new LinkedList<>(NBS_LIST);
+			nbsList.removeAll(tabuList);
+			return nbsList.get(new Random().nextInt(nbsList.size()));
+		}
 	}
 
 	private void localSearch(Timetable timetable,
