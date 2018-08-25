@@ -33,7 +33,8 @@ public class TabuBasedMemeticApproach extends AbstractAlgorithm {
 	private static final double MUTATION_RATE_MAX = 1.0;
 	private static final int TABU_LIST_SIZE_MIN = 1;
 	private static final List<NeighborhoodStructure> NBS_LIST = Arrays.asList(
-			new NeighborhoodStructure2()
+			new NeighborhoodStructure2(),
+			new NeighborhoodStructure3()
 			// TODO add more neighborhood structures
 	);
 

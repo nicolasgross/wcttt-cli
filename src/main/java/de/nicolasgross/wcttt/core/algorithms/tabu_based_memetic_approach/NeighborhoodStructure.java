@@ -6,5 +6,6 @@ import de.nicolasgross.wcttt.lib.model.Timetable;
 
 public interface NeighborhoodStructure {
 
-	void apply(Timetable timetable, Semester semester) throws WctttCoreException;
+	void apply(Timetable timetable, Semester semester)
+			throws WctttCoreException;
 }

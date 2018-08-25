@@ -18,6 +18,7 @@ public class NeighborhoodStructure2 implements NeighborhoodStructure {
 	 * @param timetable the timetable to which the neighborhood structure should
 	 *                  be applied.
 	 * @param semester the semester the timetable belongs to.
+	 * @throws WctttCoreException if an error occurred.
 	 */
 	@Override
 	public void apply(Timetable timetable, Semester semester)
