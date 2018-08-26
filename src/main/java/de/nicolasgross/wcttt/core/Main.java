@@ -37,7 +37,9 @@ public class Main {
 			throw new WctttCoreException("Error while parsing the semester", e);
 		}
 
-		// ADD NEW ALGORITHMS TO THIS LIST
+		// |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-|
+		// |  ADD NEW ALGORITHMS TO THIS LIST  |
+		// |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-|
 		List<Algorithm> algorithms = new ArrayList<>();
 		algorithms.add(new TabuBasedMemeticApproach(semester));
 

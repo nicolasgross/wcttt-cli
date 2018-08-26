@@ -17,9 +17,12 @@ public class NeighborhoodStructure3 implements NeighborhoodStructure {
 	 */
 	@Override
 	public void apply(Timetable timetable, Semester semester) {
-		// TODO double sessions
-		// TODO pre-assignments
-		TimetablePeriod[] randomPeriods = selectRandomPeriods(timetable);
+		TimetablePeriod[] randomPeriods = selectSuitablePeriods(timetable);
+
+		if (randomPeriods == null) {
+			// Could not find a suitable pair of periods, do nothing
+			return;
+		}
 
 		TimetableDay dayA =
 				timetable.getDays().get(randomPeriods[0].getDay() - 1);
@@ -29,7 +32,6 @@ public class NeighborhoodStructure3 implements NeighborhoodStructure {
 		// Remove the periods:
 		dayA.removePeriod(randomPeriods[0]);
 		dayB.removePeriod(randomPeriods[1]);
-		// TODO handle double session
 
 		// Switch periods:
 		int tmpDay = randomPeriods[0].getDay();
@@ -43,19 +45,28 @@ public class NeighborhoodStructure3 implements NeighborhoodStructure {
 			// Add periods again:
 			dayA.addPeriod(randomPeriods[1]);
 			dayB.addPeriod(randomPeriods[0]);
-			// TODO handle double sessions
 		} catch (WctttModelException e) {
 			throw new WctttCoreFatalException("Implementation error", e);
 		}
 	}
 
-	private TimetablePeriod[] selectRandomPeriods(Timetable timetable) {
+	/**
+	 * Selects two periods that can be interchanged. These periods must not
+	 * contain pre-assignments or double sessions. The method tries up to 99
+	 * random combinations of periods.
+	 *
+	 * @param timetable the timetable from which two periods should be selected.
+	 * @return an array containing two timetable periods if a suitable pair was
+	 * found, otherwise {@code null}.
+	 */
+	private TimetablePeriod[] selectSuitablePeriods(Timetable timetable) {
 		Random random = new Random();
 		TimetablePeriod periodA;
 		TimetablePeriod periodB;
 		TimetableDay dayA;
 		TimetableDay dayB;
 
+		int counter = 0;
 		do {
 			dayA = timetable.getDays().get(
 					random.nextInt(timetable.getDays().size()));
@@ -65,11 +76,30 @@ public class NeighborhoodStructure3 implements NeighborhoodStructure {
 					random.nextInt(dayA.getPeriods().size()));
 			periodB = dayB.getPeriods().get(
 					random.nextInt(dayB.getPeriods().size()));
-		} while (periodA == periodB || (dayA != dayB &&
+			counter++;
+		} while (counter < 100 && periodA == periodB || (dayA != dayB &&
 				(twoCourseLecturesInDay(dayA, periodB, periodA) ||
-						twoCourseLecturesInDay(dayB, periodA, periodB))));
+						twoCourseLecturesInDay(dayB, periodA, periodB))) ||
+				containsPreAssignmentOrDoubleSession(periodA) ||
+				containsPreAssignmentOrDoubleSession(periodB) );
 
-		return new TimetablePeriod[]{periodA, periodB};
+		if (counter == 100) {
+			// No suitable pair of periods could be found, probably too many
+			// double sessions and pre-assignments
+			return null;
+		} else {
+			return new TimetablePeriod[]{periodA, periodB};
+		}
+	}
+
+	private boolean containsPreAssignmentOrDoubleSession(TimetablePeriod period) {
+		for (TimetableAssignment assgmt : period.getAssignments()) {
+			if (assgmt.getSession().getPreAssignment().isPresent() ||
+					assgmt.getSession().isDoubleSession()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
