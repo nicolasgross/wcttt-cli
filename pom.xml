@@ -6,7 +6,7 @@
 
     <groupId>de.nicolasgross.wcttt</groupId>
     <artifactId>wcttt-core</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
 
     <packaging>jar</packaging>
 
@@ -14,7 +14,7 @@
         <dependency>
             <groupId>de.nicolasgross.wcttt</groupId>
             <artifactId>libwcttt</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 
