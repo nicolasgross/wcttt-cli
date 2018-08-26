@@ -21,9 +21,8 @@ using a GUI.
 
 1. Install libwcttt in the local maven repository
 2. `cd <path-to-project-root>`
-3. `mvn clean`
-4. `mvn package` 
-5. (Optional, installs WCT³ Core in the local maven repository which is required
+3. `mvn package` 
+4. (Optional, installs WCT³ Core in the local maven repository which is required
 to build WCT³ GUI)  
 `mvn install`
 

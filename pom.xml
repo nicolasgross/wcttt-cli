@@ -29,23 +29,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.8.0</version>
                 <configuration>
                     <release>10</release>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <!-- Fix bug with maven and Java 10 (https://stackoverflow.com/questions/
-                        49398894/unable-to-compile-simple-java-10-project-with-maven/49398936) -->
-                        <groupId>org.ow2.asm</groupId>
-                        <artifactId>asm</artifactId>
-                        <version>6.2</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>default-jar</id>
