@@ -19,13 +19,13 @@ able to run the algorithms without using a GUI.
 ## Build
 
 1. Install libwcttt in the local maven repository
-2. `cd <path-to-project-root>`
-3. `mvn package` 
+2. `cd [PATH_TO_PROJECT_ROOT]`
+3. `mvn clean package` 
 
 
 ## Run
 
-`java -jar <path-to-project-root>/target/wcttt-core.jar`
+`java -jar [PATH_TO_PROJECT_ROOT]/target/wcttt-core-[VERSION].jar`
 
 
 ## License
