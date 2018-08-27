@@ -2,8 +2,8 @@
  * WCT³ (WIAI Course Timetabling Tool) is a software that strives to automate
  * the timetabling process at the WIAI faculty of the University of Bamberg.
  *
- * WCT³ Core comprises the implementations of the algorithms as well as a
- * command line interface to be able to run them without using a GUI.
+ * WCT³ Core comprises a command line interface to be able to run the algorithms
+ * without using a GUI.
  *
  * Copyright (C) 2018 Nicolas Gross
  *
@@ -22,18 +22,15 @@
  *
  */
 
-package de.nicolasgross.wcttt.core;
+package wcttt.core;
 
-import de.nicolasgross.wcttt.core.algorithms.Algorithm;
-import de.nicolasgross.wcttt.core.algorithms.ParameterDefinition;
-import de.nicolasgross.wcttt.core.algorithms.ParameterType;
-import de.nicolasgross.wcttt.core.algorithms.ParameterValue;
-import de.nicolasgross.wcttt.core.algorithms.tabu_based_memetic_approach.TabuBasedMemeticApproach;
-import de.nicolasgross.wcttt.lib.binder.WctttBinder;
-import de.nicolasgross.wcttt.lib.binder.WctttBinderException;
-import de.nicolasgross.wcttt.lib.model.Semester;
-import de.nicolasgross.wcttt.lib.model.Timetable;
-import de.nicolasgross.wcttt.lib.model.WctttModelException;
+import wcttt.lib.algorithms.*;
+import wcttt.lib.algorithms.tabu_based_memetic_approach.TabuBasedMemeticApproach;
+import wcttt.lib.binder.WctttBinder;
+import wcttt.lib.binder.WctttBinderException;
+import wcttt.lib.model.Semester;
+import wcttt.lib.model.Timetable;
+import wcttt.lib.model.WctttModelException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -147,7 +144,7 @@ public class Main {
 			try {
 				selectedAlgorithm.setParameterValues(new LinkedList<>());
 				return;
-			} catch (WctttCoreException e) {
+			} catch (WctttAlgorithmException e) {
 				throw new WctttCoreFatalException("Implementation error in " +
 						"algorithm '" + selectedAlgorithm + "', no parameter " +
 						"specified but empty value list was rejected", e);
@@ -176,7 +173,7 @@ public class Main {
 				}
 				selectedAlgorithm.setParameterValues(values);
 				break;
-			} catch (WctttCoreException e) {
+			} catch (WctttAlgorithmException e) {
 				System.out.println(e.getMessage());
 			} catch (NumberFormatException e) {
 				System.out.println("Please adhere to the parameter types");
@@ -210,7 +207,7 @@ public class Main {
 		Timetable timetable;
 		try {
 			timetable = selectedAlgorithm.generate();
-		} catch (WctttCoreException e) {
+		} catch (WctttAlgorithmException e) {
 			throw new WctttCoreException("A problem occurred while running " +
 					"the algorithm", e);
 		} finally {

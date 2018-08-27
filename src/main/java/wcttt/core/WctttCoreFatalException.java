@@ -2,8 +2,8 @@
  * WCT³ (WIAI Course Timetabling Tool) is a software that strives to automate
  * the timetabling process at the WIAI faculty of the University of Bamberg.
  *
- * WCT³ Core comprises the implementations of the algorithms as well as a
- * command line interface to be able to run them without using a GUI.
+ * WCT³ Core comprises a command line interface to be able to run the algorithms
+ * without using a GUI.
  *
  * Copyright (C) 2018 Nicolas Gross
  *
@@ -22,7 +22,7 @@
  *
  */
 
-package de.nicolasgross.wcttt.core;
+package wcttt.core;
 
 public class WctttCoreFatalException extends RuntimeException {
 
