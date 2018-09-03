@@ -2,7 +2,7 @@
  * WCT³ (WIAI Course Timetabling Tool) is a software that strives to automate
  * the timetabling process at the WIAI faculty of the University of Bamberg.
  *
- * WCT³ Core comprises a command line interface to be able to run the algorithms
+ * WCT³ CLI comprises a command line interface to be able to run the algorithms
  * without using a GUI.
  *
  * Copyright (C) 2018 Nicolas Gross
@@ -22,7 +22,7 @@
  *
  */
 
-package wcttt.core;
+package wcttt.cli;
 
 import wcttt.lib.algorithms.*;
 import wcttt.lib.algorithms.tabu_based_memetic_approach.TabuBasedMemeticApproach;
@@ -79,7 +79,7 @@ public class Main {
 		if (generatedTimetable != null) {
 			System.out.println("A feasible timetable was found");
 			try {
-				generatedTimetable.setName("wcttt-core-default-id");
+				generatedTimetable.setName("wcttt-cli-default-id");
 				semester.addTimetable(generatedTimetable);
 				setNextTimetableName(semester, generatedTimetable);
 				binder.write(semester);
@@ -96,8 +96,8 @@ public class Main {
 	}
 
 	private static void printHelp() {
-		System.out.println("Usage: wcttt-core [SEMESTER]");
-		System.out.println("Example: wcttt-core ws1819/semester.xml");
+		System.out.println("Usage: wcttt-cli [SEMESTER]");
+		System.out.println("Example: wcttt-cli ws1819/semester.xml");
 		System.out.println();
 		System.out.println("Options:");
 		System.out.println("  -h, --help                display this help");

@@ -1,6 +1,6 @@
-module wcttt.core {
+module wcttt.cli {
 	requires javafx.controls;
 	requires wcttt.lib;
 
-	exports wcttt.core;
+	exports wcttt.cli;
 }
