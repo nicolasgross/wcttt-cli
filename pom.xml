@@ -58,6 +58,10 @@
                         <manifest>
                             <mainClass>wcttt.cli.Main
                             </mainClass>
+                            <addDefaultImplementationEntries>true
+                            </addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true
+                            </addDefaultSpecificationEntries>
                         </manifest>
                     </archive>
                 </configuration>

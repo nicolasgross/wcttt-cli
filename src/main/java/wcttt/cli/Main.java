@@ -44,8 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Main {
 
 	public static void main(String[] args) throws WctttCoreException {
-		if (args.length == 0 || args[0].startsWith("-")) {
-			printHelp();
+		if (checkArguments(args)) {
 			return;
 		}
 
@@ -95,11 +94,31 @@ public class Main {
 		}
 	}
 
+	private static boolean checkArguments(String[] args) {
+		if (args.length == 0 || args.length > 1) {
+			printHelp();
+			return true;
+		} else if (args[0].startsWith("-")) {
+			switch (args[0]) {
+				case "-v":
+				case "--version":
+					System.out.println("Version: " +
+							Main.class.getPackage().getImplementationVersion());
+					break;
+				default:
+					printHelp();
+			}
+			return true;
+		}
+		return false;
+	}
+
 	private static void printHelp() {
 		System.out.println("Usage: wcttt-cli [SEMESTER]");
 		System.out.println("Example: wcttt-cli ws1819/semester.xml");
 		System.out.println();
 		System.out.println("Options:");
+		System.out.println("  -v, --version             display the version");
 		System.out.println("  -h, --help                display this help");
 	}
 
