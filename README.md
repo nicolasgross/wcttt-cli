@@ -1,4 +1,4 @@
-# WCT³ CLI
+# WCT³-CLI
 
 WCT³ (WIAI Course Timetabling Tool) is a software that strives to automate the 
 timetabling process at the WIAI faculty of the University of Bamberg. It was 
