@@ -9,14 +9,15 @@ This is the CLI module of WCT³. It comprises a command line interface to be
 able to run the algorithms without using a GUI.
 
 
-## Dependencies
+## Build
+
+### Requirements
 
 - Oracle JDK 10
 - maven
 - libwcttt
 
-
-## Build
+### Steps
 
 1. Install libwcttt in the local maven repository
 2. `cd [PATH_TO_PROJECT_ROOT]`
@@ -24,6 +25,12 @@ able to run the algorithms without using a GUI.
 
 
 ## Run
+
+### Requirements
+
+- Oracle JDK/JRE 10
+
+### Command
 
 `java -jar [PATH_TO_PROJECT_ROOT]/target/wcttt-cli-[VERSION].jar`
 
