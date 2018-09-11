@@ -24,25 +24,25 @@
 
 package wcttt.cli;
 
-public class WctttCoreFatalException extends RuntimeException {
+public class WctttCliException extends Exception {
 
-	public WctttCoreFatalException() {
+	public WctttCliException() {
 		super();
 	}
 
-	public WctttCoreFatalException(String message) {
+	public WctttCliException(String message) {
 		super(message);
 	}
 
-	public WctttCoreFatalException(String message, Throwable cause) {
+	public WctttCliException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
-	public WctttCoreFatalException(Throwable cause) {
+	public WctttCliException(Throwable cause) {
 		super(cause);
 	}
 
-	protected WctttCoreFatalException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+	protected WctttCliException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
 	}
 }

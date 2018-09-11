@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
 
-	public static void main(String[] args) throws WctttCoreException {
+	public static void main(String[] args) throws WctttCliException {
 		if (checkArguments(args)) {
 			return;
 		}
@@ -54,7 +54,7 @@ public class Main {
 			binder = new WctttBinder(new File(args[0]));
 			semester = binder.parse();
 		} catch (WctttBinderException e) {
-			throw new WctttCoreException("Error while parsing the semester", e);
+			throw new WctttCliException("Error while parsing the semester", e);
 		}
 
 		// |-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-|
@@ -72,7 +72,7 @@ public class Main {
 			generatedTimetable =
 					runAlgorithm(selectedAlgorithm, inputReader);
 		} catch (IOException e) {
-			throw new WctttCoreFatalException("Problem with input reader", e);
+			throw new WctttCliFatalException("Problem with input reader", e);
 		}
 
 		if (generatedTimetable != null) {
@@ -83,10 +83,10 @@ public class Main {
 				setNextTimetableName(semester, generatedTimetable);
 				binder.write(semester);
 			} catch (WctttModelException e) {
-				throw new WctttCoreException("Generated timetable was " +
+				throw new WctttCliException("Generated timetable was " +
 						"invalid, there is a bug in the algorithm", e);
 			} catch (WctttBinderException e) {
-				throw new WctttCoreException("Error while writing the semester",
+				throw new WctttCliException("Error while writing the semester",
 						e);
 			}
 		} else {
@@ -137,7 +137,7 @@ public class Main {
 			String input = inputReader.readLine();
 			if (input == null) {
 				// Should never happen theoretically
-				throw new WctttCoreFatalException("End of input stream reached");
+				throw new WctttCliFatalException("End of input stream reached");
 			}
 			try {
 				selected = Integer.parseInt(input);
@@ -164,7 +164,7 @@ public class Main {
 				selectedAlgorithm.setParameterValues(new LinkedList<>());
 				return;
 			} catch (WctttAlgorithmException e) {
-				throw new WctttCoreFatalException("Implementation error in " +
+				throw new WctttCliFatalException("Implementation error in " +
 						"algorithm '" + selectedAlgorithm + "', no parameter " +
 						"specified but empty value list was rejected", e);
 			}
@@ -219,7 +219,7 @@ public class Main {
 
 	private static Timetable runAlgorithm(Algorithm selectedAlgorithm,
 	                                      BufferedReader inputReader)
-			throws WctttCoreException {
+			throws WctttCliException {
 		AtomicBoolean finished = new AtomicBoolean(false);
 		Thread thread = listenForAbort(selectedAlgorithm, finished, inputReader);
 		System.out.println("Enter 'q' to exit the algorithm");
@@ -227,7 +227,7 @@ public class Main {
 		try {
 			timetable = selectedAlgorithm.generate();
 		} catch (WctttAlgorithmException e) {
-			throw new WctttCoreException("A problem occurred while running " +
+			throw new WctttCliException("A problem occurred while running " +
 					"the algorithm", e);
 		} finally {
 			finished.set(true);
