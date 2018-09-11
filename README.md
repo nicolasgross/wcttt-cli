@@ -9,6 +9,13 @@ This is the CLI module of WCT³. It comprises a command line interface to be
 able to run the algorithms without using a GUI.
 
 
+## Notice
+
+Because of an unresolved issue in the JAXB framework, warning messages are
+printed to stdout if a XML file is parsed/written. The corresponding issue on 
+GitHub can be found [here](https://github.com/javaee/jaxb-v2/issues/1197).
+
+
 ## Build
 
 ### Requirements
