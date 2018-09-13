@@ -41,6 +41,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Provides the implementation of a minimal command line interface to run the
+ * timetabling algorithms.
+ */
 public class Main {
 
 	public static void main(String[] args) throws WctttCliException {

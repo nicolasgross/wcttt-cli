@@ -24,6 +24,10 @@
 
 package wcttt.cli;
 
+/**
+ * Thrown if an error occurs in the CLI that is caused by a faulty
+ * implementation.
+ */
 public class WctttCliFatalException extends RuntimeException {
 
 	public WctttCliFatalException() {

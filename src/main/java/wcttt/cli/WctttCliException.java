@@ -24,6 +24,9 @@
 
 package wcttt.cli;
 
+/**
+ * Thrown if a error occurs in the CLI that is relevant for the user.
+ */
 public class WctttCliException extends Exception {
 
 	public WctttCliException() {
