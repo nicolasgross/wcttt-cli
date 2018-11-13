@@ -21,6 +21,7 @@ GitHub can be found [here](https://github.com/javaee/jaxb-v2/issues/1197).
 ### Requirements
 
 - Oracle JDK or OpenJDK, version 11 or higher
+- OpenJFX 11
 - maven
 - libwcttt
 
