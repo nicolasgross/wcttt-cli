@@ -16,30 +16,20 @@ printed to stdout if a XML file is parsed/written. The corresponding issue on
 GitHub can be found [here](https://github.com/javaee/jaxb-v2/issues/1197).
 
 
-## Build
+## Run
 
 ### Requirements
 
-- Oracle JDK, version 10 or higher
+- Oracle JDK or OpenJDK, version 11 or higher
 - maven
 - libwcttt
 
 ### Steps
 
 1. Install libwcttt in the local maven repository
-2. `cd [PATH_TO_PROJECT_ROOT]`
-3. `mvn clean package` 
-
-
-## Run
-
-### Requirements
-
-- Oracle JDK/JRE, version 10 or higher
-
-### Command
-
-`java -jar [PATH_TO_PROJECT_ROOT]/target/wcttt-cli-[VERSION].jar`
+2. `cd PATH_TO_PROJECT_ROOT`
+3. `mvn clean compile`
+4. `mvn exec:java -Dexec.args="PATH_TO_SEMESTER_DATA"`
 
 
 ## License
